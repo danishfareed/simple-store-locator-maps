@@ -23,7 +23,7 @@ export function getShopify(env: CloudflareEnv): AppInstance {
   const app = shopifyApp({
     apiKey: env.SHOPIFY_API_KEY,
     apiSecretKey: env.SHOPIFY_API_SECRET,
-    apiVersion: (env.SHOPIFY_API_VERSION as ApiVersion) ?? ApiVersion.January25,
+    apiVersion: (env.SHOPIFY_API_VERSION as ApiVersion) ?? ApiVersion.April26,
     scopes: env.SCOPES?.split(",").map((s) => s.trim()).filter(Boolean) ?? [],
     appUrl: env.SHOPIFY_APP_URL,
     authPathPrefix: "/auth",

@@ -8,8 +8,8 @@ assets = { directory = "./build/client", binding = "ASSETS" }
 [vars]
 # Public/non-secret vars only. Secrets → `wrangler secret put`.
 SHOPIFY_APP_URL = ""
-SCOPES = "read_products,write_products"
-SHOPIFY_API_VERSION = "2025-01"
+SCOPES = ""
+SHOPIFY_API_VERSION = "2026-04"
 APP_ENV = "development"
 
 [[d1_databases]]
