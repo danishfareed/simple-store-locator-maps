@@ -74,11 +74,14 @@ async function initWidget(root) {
     "aria-label": "Map of locations",
   });
 
-  // The List/Grid view is map-less: don't load a map SDK it will never use.
-  const provider =
-    widget.type === "list"
-      ? null
-      : await createProvider({ el: mapEl, widget, config });
+  // The List/Grid view is map-less, and a Carousel without a mini-map has no
+  // map to render either: don't load a map SDK it will never use.
+  const skipProvider =
+    widget.type === "list" ||
+    (widget.type === "carousel" && !config.showMiniMap);
+  const provider = skipProvider
+    ? null
+    : await createProvider({ el: mapEl, widget, config });
 
   const trackBound = (type, payload) => track(proxyBase, type, payload);
   const geocodeBound = (query) =>

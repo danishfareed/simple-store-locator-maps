@@ -253,7 +253,7 @@ export function renderMapList(shell, ctx) {
       return;
     }
     center = geo;
-    working = sortByDistance(locations.slice(), center);
+    working = sortByDistance(applyFilters(locations.slice()), center);
     selectedId = null;
     renderResults();
     paintMarkers();

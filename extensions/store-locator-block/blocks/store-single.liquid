@@ -5,18 +5,16 @@
   class="simple-store-locator"
   data-handle="{{ block.settings.widget_handle | default: 'default' }}"
   data-proxy-base="{{ shop.url }}/apps/store-locator"
-  style="--ssl-height: {{ block.settings.height | default: 540 }}px;"
 ></div>
 
 <script src="{{ 'store-locator.js' | asset_url }}" defer></script>
 
 {% schema %}
 {
-  "name": "Store Locator",
+  "name": "Store — Single Location",
   "target": "section",
   "settings": [
-    { "type": "text", "id": "widget_handle", "label": "Widget handle", "default": "default" },
-    { "type": "number", "id": "height", "label": "Map height (px)", "default": 540 }
+    { "type": "text", "id": "widget_handle", "label": "Widget handle" }
   ]
 }
 {% endschema %}
