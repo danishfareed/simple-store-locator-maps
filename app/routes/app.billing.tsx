@@ -59,7 +59,27 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const cadence = (String(form.get("cadence") ?? "monthly") as BillingCadence);
 
   if (planHandle === "free") {
-    await cancelSubscription(db, shop.id);
+    const isTest = env.APP_ENV !== "production";
+
+    // Adapter: performs the REAL Shopify cancellation. `auth.billing.check`
+    // returns the shop's currently active `appSubscriptions` (with their
+    // gids); we cancel each one via `auth.billing.cancel`. If there's
+    // nothing active on Shopify's side (already cancelled, trial never
+    // converted, etc.) this is a no-op rather than an error — but a genuine
+    // Shopify API failure propagates so we don't tell the merchant they've
+    // downgraded while Shopify keeps billing them.
+    const shopifyCancel = async () => {
+      const { appSubscriptions } = await auth.billing.check({ isTest });
+      for (const subscription of appSubscriptions) {
+        await auth.billing.cancel({
+          subscriptionId: subscription.id,
+          isTest,
+          prorate: true,
+        });
+      }
+    };
+
+    await cancelSubscription(db, shop.id, shopifyCancel);
     return { ok: true as const };
   }
 

@@ -193,8 +193,35 @@ export async function getActivePlanHandle(
   return handle === PLAN_PREMIUM.handle ? "premium" : "free";
 }
 
-/** Downgrade to free (used when the merchant chooses the free plan in the UI). */
-export async function cancelSubscription(db: Database, shopId: string): Promise<void> {
+/**
+ * Downgrade to free (used when the merchant chooses the free plan in the UI).
+ *
+ * `shopifyCancel` is an optional adapter that performs the REAL Shopify
+ * subscription cancellation (via `auth.billing.cancel(...)`). It is injected
+ * by the caller (the route) so this function stays unit-testable without a
+ * live Shopify session. Contract:
+ *   - When there IS an active Shopify subscription, the adapter cancels it.
+ *     If that call fails, the adapter should throw — we deliberately do NOT
+ *     swallow that error, so the merchant isn't told they've downgraded while
+ *     Shopify keeps billing them.
+ *   - When there is NOTHING to cancel on Shopify's side (e.g. the local row
+ *     is already non-active, or no charge id was ever recorded), the adapter
+ *     is expected to no-op rather than throw — that's a legitimate case
+ *     (already cancelled, trial never converted, etc.), not a failure.
+ *
+ * Only after the Shopify-side cancel (if any) succeeds do we flip local
+ * state: mark the active subscription row cancelled and set
+ * `shop.planHandle = "free"`.
+ */
+export async function cancelSubscription(
+  db: Database,
+  shopId: string,
+  shopifyCancel?: () => Promise<void>,
+): Promise<void> {
+  if (shopifyCancel) {
+    await shopifyCancel();
+  }
+
   const active = await db
     .select()
     .from(subscriptions)
