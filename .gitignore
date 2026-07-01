@@ -1,0 +1,26 @@
+node_modules
+.DS_Store
+.env
+.env.*
+!.env.example
+
+build
+.react-router
+.wrangler
+dist
+
+# Editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Shopify
+.shopify/
+extensions/**/build

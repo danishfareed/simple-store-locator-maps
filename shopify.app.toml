@@ -1,0 +1,36 @@
+# Shopify app config. Run `shopify app config link` to connect an app, then
+# `shopify app config use`. Values below are defaults overwritten on link.
+name = "simple-store-locator"
+handle = "simple-store-locator"
+application_url = "https://REPLACE-ME.workers.dev"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = ""
+include_config_on_deploy = true
+
+[access_scopes]
+scopes = "read_products,write_products"
+
+[auth]
+redirect_urls = [
+  "https://REPLACE-ME.workers.dev/auth/callback",
+  "https://REPLACE-ME.workers.dev/auth/shopify/callback",
+  "https://REPLACE-ME.workers.dev/api/auth/callback",
+]
+
+[webhooks]
+api_version = "2025-01"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "/webhooks/app/uninstalled"
+
+[app_proxy]
+url = "https://REPLACE-ME.workers.dev/proxy"
+subpath = "store-locator"
+prefix = "apps"
+
+[pos]
+embedded = false

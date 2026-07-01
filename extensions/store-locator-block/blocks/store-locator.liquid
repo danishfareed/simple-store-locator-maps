@@ -1,0 +1,52 @@
+{{ 'store-locator.css' | asset_url | stylesheet_tag }}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+
+<div
+  id="simple-store-locator-{{ block.id }}"
+  class="simple-store-locator"
+  data-handle="{{ block.settings.widget_handle | default: 'default' }}"
+  data-proxy-base="{{ shop.url }}/apps/store-locator"
+  data-initial-zoom="{{ block.settings.initial_zoom | default: 10 }}"
+  data-height="{{ block.settings.height | default: 540 }}"
+>
+  <div class="simple-store-locator__shell">
+    <aside class="simple-store-locator__sidebar">
+      <form class="simple-store-locator__search" role="search">
+        <input
+          type="search"
+          name="q"
+          placeholder="{{ block.settings.search_placeholder | default: 'Search city or ZIP' }}"
+          aria-label="Search locations"
+        />
+        <button type="submit">{{ block.settings.search_label | default: 'Search' }}</button>
+      </form>
+      <ul class="simple-store-locator__results" aria-live="polite"></ul>
+    </aside>
+    <div
+      class="simple-store-locator__map"
+      style="height: {{ block.settings.height | default: 540 }}px"
+      aria-label="Map of locations"
+    ></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script src="{{ 'store-locator.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Store Locator",
+  "target": "section",
+  "settings": [
+    { "type": "text", "id": "widget_handle", "label": "Widget handle", "default": "default" },
+    { "type": "number", "id": "initial_zoom", "label": "Initial zoom", "default": 10 },
+    { "type": "number", "id": "height", "label": "Map height (px)", "default": 540 },
+    { "type": "text", "id": "search_placeholder", "label": "Search placeholder", "default": "Search city or ZIP" },
+    { "type": "text", "id": "search_label", "label": "Search button label", "default": "Search" }
+  ]
+}
+{% endschema %}

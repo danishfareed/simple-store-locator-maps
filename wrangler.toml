@@ -1,0 +1,46 @@
+name = "simple-store-locator"
+main = "./build/worker/index.js"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+assets = { directory = "./build/client", binding = "ASSETS" }
+
+[vars]
+# Public/non-secret vars only. Secrets → `wrangler secret put`.
+SHOPIFY_APP_URL = ""
+SCOPES = "read_products,write_products"
+SHOPIFY_API_VERSION = "2025-01"
+APP_ENV = "development"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "simple-store-locator"
+database_id = "REPLACE_WITH_D1_ID"
+migrations_dir = "./drizzle/migrations"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "simple-store-locator-uploads"
+
+[[queues.producers]]
+binding = "IMPORT_QUEUE"
+queue = "simple-store-locator-imports"
+
+[[queues.consumers]]
+queue = "simple-store-locator-imports"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "simple-store-locator-imports-dlq"
+
+[observability]
+enabled = true
+
+# Per-env overrides
+[env.staging]
+name = "simple-store-locator-staging"
+vars = { APP_ENV = "staging" }
+
+[env.production]
+name = "simple-store-locator-production"
+vars = { APP_ENV = "production" }

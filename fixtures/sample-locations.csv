@@ -1,0 +1,6 @@
+name,address,city,state,postal_code,country_code,latitude,longitude,phone,email,website,services,external_id
+"Flagship Downtown","221B Baker Street","London","Greater London","NW1 6XE","GB",51.52362,-0.15865,"+44 20 7123 4567","hello@example.com","https://example.com/london","open_sundays|cafe","LDN-001"
+"SoHo Pop-Up","99 Spring Street","New York","NY","10012","US",40.72368,-73.99793,"+1 212-555-0199","nyc@example.com","https://example.com/nyc","new_arrivals|gift_wrap","NYC-014"
+"Harajuku Boutique","4-31-10 Jingumae","Shibuya City","Tokyo","150-0001","JP",35.66838,139.70424,"+81 3-1234-5678","tokyo@example.com","https://example.com/tokyo","styling_service","TYO-002"
+"Marais Atelier","35 Rue de Sévigné","Paris","Île-de-France","75004","FR",48.85715,2.36280,"+33 1 42 00 00 00","paris@example.com","https://example.com/paris","alterations|cafe","PAR-007"
+"Bondi Concept","72 Hall Street","Bondi Beach","NSW","2026","AU",-33.89135,151.27623,"+61 2 9000 0000","syd@example.com","https://example.com/syd","surfboard_rental","SYD-003"
