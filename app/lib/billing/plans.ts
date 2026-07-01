@@ -1,4 +1,4 @@
-import type { Plan, WidgetType } from "../db/schema";
+import type { Plan, WidgetConfig, WidgetType } from "../db/schema";
 import type { ProviderId } from "../../features/providers/providers";
 import {
   BillingInterval,
@@ -131,6 +131,40 @@ export function planAllowsImportKind(handle: string, kind: "csv" | "xlsx"): bool
  */
 export function planShowsPoweredBy(handle: string): boolean {
   return !planAllows(handle, "remove_branding");
+}
+
+/**
+ * Server-side gate for premium WIDGET CONFIG features (theme, clustering,
+ * near-me, categories/filters). Returns a shallow-cloned config with any
+ * feature the plan does not allow stripped out; everything else (provider,
+ * type, powered-by — handled elsewhere — plus base fields like
+ * defaultCenter/defaultZoom and per-type extras) passes through untouched.
+ *
+ * Pure and client-safe (no server-only imports) so it can run at BOTH save
+ * time (`saveWidget`, to keep the DB honest) and render time
+ * (`proxy.widget.ts`, the authoritative gate — it also covers widgets saved
+ * before a downgrade). Do not use this to gate widget TYPE or PROVIDER;
+ * those already have their own enforcement (`assertWidgetTypeAllowed`,
+ * `resolveProvider`).
+ */
+export function applyPlanToConfig(config: WidgetConfig, planHandle: string): WidgetConfig {
+  const next: WidgetConfig = { ...config };
+
+  if (!planAllows(planHandle, "custom_theme")) {
+    delete next.theme;
+  }
+  if (!planAllows(planHandle, "clustering")) {
+    next.clustering = false;
+  }
+  if (!planAllows(planHandle, "near_me")) {
+    next.enableNearMe = false;
+  }
+  if (!planAllows(planHandle, "filters")) {
+    delete next.categories;
+    delete next.filters;
+  }
+
+  return next;
 }
 
 /** Map our stored interval string to the Shopify `BillingInterval` enum. */

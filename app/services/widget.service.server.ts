@@ -9,7 +9,7 @@ import {
 } from "../repositories/widget.repository.server";
 import type { WidgetInput } from "../schemas/widget.schema";
 import type { Widget, WidgetType } from "../lib/db/schema";
-import { planAllowsWidgetType } from "../lib/billing/plans";
+import { applyPlanToConfig, planAllowsWidgetType } from "../lib/billing/plans";
 import { getActivePlanHandle } from "./billing.service.server";
 import { PlanFeatureError } from "./quota.service.server";
 
@@ -49,9 +49,14 @@ async function ensureUniqueHandle(
 /**
  * Create or update a widget. Resolves the shop's active plan and enforces
  * `assertWidgetTypeAllowed` BEFORE persisting — never trust the client widget
- * type gallery. Handle uniqueness is auto-resolved: on create, a colliding
- * handle gets `-2`, `-3`, … suffixed; on edit, the widget keeps its own
- * handle (matched via `existingId`) and only collides with OTHER widgets.
+ * type gallery. The config is also normalized via `applyPlanToConfig` so
+ * premium-only features (theme, clustering, near-me, categories/filters)
+ * never land in the DB for a plan that doesn't allow them — keeps the DB
+ * honest even though `proxy.widget.ts` re-applies the same gate at render
+ * time as the authoritative check. Handle uniqueness is auto-resolved: on
+ * create, a colliding handle gets `-2`, `-3`, … suffixed; on edit, the
+ * widget keeps its own handle (matched via `existingId`) and only collides
+ * with OTHER widgets.
  */
 export async function saveWidget(
   db: Database,
@@ -62,6 +67,7 @@ export async function saveWidget(
   const planHandle = await getActivePlanHandle(db, shopId);
   assertWidgetTypeAllowed(planHandle, input.type);
 
+  const config = applyPlanToConfig(input.config, planHandle);
   const handle = await ensureUniqueHandle(db, shopId, input.handle, existingId);
 
   if (existingId) {
@@ -70,7 +76,7 @@ export async function saveWidget(
       name: input.name,
       provider: input.provider,
       type: input.type,
-      config: input.config,
+      config,
       isPublished: input.isPublished,
     });
     if (!updated) {
@@ -86,7 +92,7 @@ export async function saveWidget(
     name: input.name,
     provider: input.provider,
     type: input.type,
-    config: input.config,
+    config,
     isPublished: input.isPublished,
   });
 }
@@ -103,6 +109,10 @@ export async function deleteWidget(db: Database, shopId: string, id: string) {
  * Duplicate a widget: same type/config/provider, a fresh unique handle
  * (`<handle>-copy`, auto-suffixed on further collisions), name suffixed with
  * " (copy)", and always unpublished so the copy doesn't go live unreviewed.
+ * Re-checks `assertWidgetTypeAllowed` against the shop's CURRENT plan — a
+ * premium-type widget (e.g. `finder`) saved before a downgrade must not be
+ * duplicable on a now-free plan, matching the gate `saveWidget` applies on
+ * create/edit.
  */
 export async function duplicateWidget(
   db: Database,
@@ -113,6 +123,9 @@ export async function duplicateWidget(
   if (!source) {
     throw new Error(`Widget not found: ${id}`);
   }
+
+  const planHandle = await getActivePlanHandle(db, shopId);
+  assertWidgetTypeAllowed(planHandle, source.type);
 
   const handle = await ensureUniqueHandle(db, shopId, `${source.handle}-copy`);
 

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { eq } from "drizzle-orm";
 import { makeTestDb } from "../helpers/db";
 import { shops } from "../../app/lib/db/schema";
 import {
@@ -80,6 +81,42 @@ describe("saveWidget — plan gating", () => {
 
     expect(widget.type).toBe("carousel");
     expect(widget.config).toMatchObject({ type: "carousel", cardsPerView: 3 });
+  });
+});
+
+describe("saveWidget — strips premium config features on the free plan", () => {
+  it("persists a map_list widget with theme/clustering/near-me/filters stripped for a free shop", async () => {
+    const shopId = "ws-free-strip";
+    const db = await seedBareShop(shopId, "free");
+
+    const saved = await saveWidget(
+      db,
+      shopId,
+      mapListInput({
+        config: {
+          type: "map_list",
+          sidebarPosition: "left",
+          clustering: true,
+          enableNearMe: true,
+          categories: ["bakery"],
+          filters: { services: ["wifi"] },
+          theme: { primaryColor: "#123456" },
+        },
+      }),
+    );
+
+    // Read it back from the DB to prove it was persisted stripped, not just
+    // returned stripped in-memory.
+    const fromDb = await getWidget(db, shopId, saved.id);
+    expect(fromDb).toBeDefined();
+    expect(fromDb?.config.theme).toBeUndefined();
+    expect(fromDb?.config.categories).toBeUndefined();
+    expect(fromDb?.config.filters).toBeUndefined();
+    expect(fromDb?.config.clustering).toBe(false);
+    expect(fromDb?.config.enableNearMe).toBe(false);
+    // Base fields and the type discriminant survive.
+    expect(fromDb?.config.type).toBe("map_list");
+    expect(fromDb?.config.sidebarPosition).toBe("left");
   });
 });
 
@@ -210,6 +247,27 @@ describe("duplicateWidget", () => {
 
     const all = await listWidgets(db, shopId);
     expect(all).toHaveLength(3);
+  });
+
+  it("throws PlanFeatureError duplicating a premium-type widget after downgrading to free", async () => {
+    const shopId = "ws-duplicate-downgraded";
+    const db = await seedBareShop(shopId, "premium");
+
+    const original = await saveWidget(
+      db,
+      shopId,
+      { ...mapListInput(), handle: "store-finder", name: "Store Finder", type: "finder", config: { type: "finder" } },
+    );
+    expect(original.type).toBe("finder");
+
+    // Downgrade the shop to free.
+    await db.update(shops).set({ planHandle: "free" }).where(eq(shops.id, shopId));
+
+    await expect(duplicateWidget(db, shopId, original.id)).rejects.toThrow(PlanFeatureError);
+
+    // No copy should have been persisted.
+    const all = await listWidgets(db, shopId);
+    expect(all).toHaveLength(1);
   });
 });
 

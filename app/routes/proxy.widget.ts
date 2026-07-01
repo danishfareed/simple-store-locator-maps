@@ -4,7 +4,7 @@ import { requireStorefront } from "../lib/auth/storefront.server";
 import { widgets } from "../lib/db/schema";
 import { resolveProvider } from "../services/provider.service.server";
 import { incrementStorefrontRequest } from "../services/quota.service.server";
-import { planShowsPoweredBy } from "../lib/billing/plans";
+import { applyPlanToConfig, planShowsPoweredBy } from "../lib/billing/plans";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const gate = await requireStorefront(request, context);
@@ -35,6 +35,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       ? gate.shop.settings.googleMapsApiKey
       : undefined;
 
+  // Authoritative gate: strip premium config features (theme, clustering,
+  // near-me, categories/filters) the shop's CURRENT plan doesn't allow. This
+  // covers widgets saved while on a higher plan and later downgraded, since
+  // `saveWidget` only normalizes at save time.
+  const config = applyPlanToConfig(widget.config, gate.shop.planHandle);
+
   return Response.json(
     {
       widget: {
@@ -46,7 +52,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           tileUrl: provider.tileUrl,
           attribution: provider.attribution,
         },
-        config: widget.config,
+        config,
         timezone: gate.shop.timezone ?? null,
         showPoweredBy: planShowsPoweredBy(gate.shop.planHandle),
         googleMapsApiKey,
