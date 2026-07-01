@@ -12,6 +12,7 @@ import { getActivePlanHandle } from "../services/billing.service.server";
 import { WidgetTypeEnum, type WidgetType } from "../schemas/widget.schema";
 import { WIDGET_TYPES } from "../features/widgets/widget-types";
 import { WidgetEditor } from "../features/widgets/WidgetEditor";
+import { toPreviewLocation } from "../features/widgets/WidgetPreview";
 import { handleWidgetSave } from "../features/widgets/widget-editor.server";
 
 function parseType(raw: string | null): WidgetType {
@@ -28,9 +29,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   ]);
   return {
     type,
-    locations: items.map((l) => ({ id: l.id, name: l.name })),
+    // Storefront-shaped so the live preview can render real markers. A superset
+    // of the `{id,name}` LocationOption the type controls read.
+    locations: items.map(toPreviewLocation),
     plan,
     settings: { googleMapsApiKey: shop.settings?.googleMapsApiKey },
+    timezone: shop.timezone ?? null,
   };
 }
 
@@ -45,7 +49,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function NewWidget() {
-  const { type, locations, plan, settings } = useLoaderData<typeof loader>();
+  const { type, locations, plan, settings, timezone } =
+    useLoaderData<typeof loader>();
   const data = useActionData<typeof action>();
 
   return (
@@ -59,6 +64,7 @@ export default function NewWidget() {
         locations={locations}
         plan={plan}
         settings={settings}
+        timezone={timezone}
         fieldErrors={data && !data.ok ? data.fieldErrors : undefined}
         formError={data && !data.ok ? data.formError : undefined}
       />

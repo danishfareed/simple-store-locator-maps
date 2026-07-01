@@ -12,6 +12,7 @@ import { deleteWidget } from "../repositories/widget.repository.server";
 import { listLocations } from "../repositories/location.repository.server";
 import { getActivePlanHandle } from "../services/billing.service.server";
 import { WidgetEditor } from "../features/widgets/WidgetEditor";
+import { toPreviewLocation } from "../features/widgets/WidgetPreview";
 import { handleWidgetSave } from "../features/widgets/widget-editor.server";
 
 export async function loader({ request, context, params }: LoaderFunctionArgs) {
@@ -25,9 +26,12 @@ export async function loader({ request, context, params }: LoaderFunctionArgs) {
   return {
     widget,
     type: widget.type,
-    locations: items.map((l) => ({ id: l.id, name: l.name })),
+    // Storefront-shaped so the live preview can render real markers. A superset
+    // of the `{id,name}` LocationOption the type controls read.
+    locations: items.map(toPreviewLocation),
     plan,
     settings: { googleMapsApiKey: shop.settings?.googleMapsApiKey },
+    timezone: shop.timezone ?? null,
   };
 }
 
@@ -48,7 +52,8 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
 }
 
 export default function EditWidget() {
-  const { widget, type, locations, plan, settings } = useLoaderData<typeof loader>();
+  const { widget, type, locations, plan, settings, timezone } =
+    useLoaderData<typeof loader>();
   const data = useActionData<typeof action>();
 
   return (
@@ -77,6 +82,7 @@ export default function EditWidget() {
         locations={locations}
         plan={plan}
         settings={settings}
+        timezone={timezone}
         fieldErrors={data && !data.ok ? data.fieldErrors : undefined}
         formError={data && !data.ok ? data.formError : undefined}
       />

@@ -4,7 +4,6 @@ import {
   Badge,
   Banner,
   BlockStack,
-  Box,
   Button,
   Card,
   Checkbox,
@@ -33,7 +32,8 @@ import { MapListControls } from "./typeControls/MapListControls";
 import { FinderControls } from "./typeControls/FinderControls";
 import { CarouselControls } from "./typeControls/CarouselControls";
 import { ListControls } from "./typeControls/ListControls";
-import { SingleControls, type LocationOption } from "./typeControls/SingleControls";
+import { SingleControls } from "./typeControls/SingleControls";
+import { WidgetPreview, type PreviewLocation } from "./WidgetPreview";
 
 const FONT_OPTIONS = [
   { label: "Theme default", value: "" },
@@ -55,10 +55,14 @@ export interface WidgetEditorProps {
   mode: "create" | "edit";
   type: WidgetType;
   widget?: Widget;
-  locations: LocationOption[];
+  /** Storefront-shaped locations (a superset of the `{id,name}` LocationOption
+   *  the type controls read) so the live preview can render real markers. */
+  locations: PreviewLocation[];
   plan: string;
   /** Shop settings — used to know whether a Google Maps key is configured. */
   settings: { googleMapsApiKey?: string };
+  /** Shop IANA timezone — forwarded to the preview for "open now" evaluation. */
+  timezone?: string | null;
   fieldErrors?: Record<string, string>;
   formError?: string;
 }
@@ -86,6 +90,7 @@ export function WidgetEditor({
   locations,
   plan,
   settings,
+  timezone,
   fieldErrors,
   formError,
 }: WidgetEditorProps) {
@@ -469,42 +474,22 @@ export function WidgetEditor({
           </BlockStack>
         </Layout.Section>
 
-        {/* ───────────────── RIGHT: preview placeholder ───────────────── */}
+        {/* ───────────────── RIGHT: live preview ───────────────── */}
         <Layout.Section variant="oneThird">
-          <Card>
-            <BlockStack gap="300">
-              <Text as="h2" variant="headingSm">
-                Preview
-              </Text>
-              <Badge tone="info">{typeMeta.label}</Badge>
-              {/* Preview mount point for the follow-up live-preview task. */}
-              <Box
-                background="bg-surface-secondary"
-                borderRadius="200"
-                padding="400"
-                minHeight="240px"
-              >
-                <div
-                  id="ssl-preview-slot"
-                  style={{
-                    minHeight: 200,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textAlign: "center",
-                  }}
-                >
-                  <Text as="p" tone="subdued">
-                    Live preview appears here after you save. You can also
-                    preview on your storefront.
-                  </Text>
-                </div>
-              </Box>
-              <Text as="p" tone="subdued" variant="bodySm">
-                {typeMeta.description}
-              </Text>
-            </BlockStack>
-          </Card>
+          <BlockStack gap="300">
+            <WidgetPreview
+              type={type}
+              provider={provider}
+              config={{ ...config, type }}
+              locations={locations}
+              settings={settings}
+              timezone={timezone}
+              typeLabel={typeMeta.label}
+            />
+            <Text as="p" tone="subdued" variant="bodySm">
+              {typeMeta.description}
+            </Text>
+          </BlockStack>
         </Layout.Section>
       </Layout>
     </Form>

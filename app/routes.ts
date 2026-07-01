@@ -16,6 +16,11 @@ export default [
     route("billing", "routes/app.billing.tsx"),
   ]),
 
+  // Live widget preview — standalone HTML doc for the editor iframe.
+  // NOT under the /app layout: no admin auth, no data (all config arrives via
+  // same-origin postMessage from the authenticated parent editor).
+  route("widget-preview", "routes/widget-preview.tsx"),
+
   // Auth
   route("auth/login", "routes/auth.login.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),

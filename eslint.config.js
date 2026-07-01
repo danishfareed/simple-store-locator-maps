@@ -12,6 +12,34 @@ export default [
     languageOptions: {
       parser: tsparser,
       parserOptions: { ecmaVersion: "latest", sourceType: "module", ecmaFeatures: { jsx: true } },
+      // App code runs in the browser (React components) and the Cloudflare
+      // Worker runtime (loaders/actions); both share the web-platform globals
+      // below. Cloudflare-specific types (D1Database, R2ObjectBody, …) are
+      // ambient TS types checked by `tsc`, not lint-time values.
+      globals: {
+        window: "readonly",
+        document: "readonly",
+        navigator: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        Response: "readonly",
+        Request: "readonly",
+        Headers: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        FormData: "readonly",
+        Blob: "readonly",
+        Node: "readonly",
+        MessageEvent: "readonly",
+        HTMLIFrameElement: "readonly",
+        HTMLElement: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
+        requestAnimationFrame: "readonly",
+        cancelAnimationFrame: "readonly",
+      },
     },
     plugins: {
       "@typescript-eslint": tseslint,
