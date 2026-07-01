@@ -24,12 +24,12 @@
     "shopify:deploy": "shopify app deploy"
   },
   "dependencies": {
-    "@cloudflare/vite-plugin": "^1.32.3",
-    "@react-router/cloudflare": "^7.14.1",
-    "@shopify/app-bridge-react": "^4.2.10",
+    "@cloudflare/vite-plugin": "^1.42.4",
+    "@react-router/cloudflare": "^7.18.1",
+    "@shopify/app-bridge-react": "^4.2.11",
     "@shopify/polaris": "^13.9.5",
-    "@shopify/shopify-api": "^13.0.0",
-    "@shopify/shopify-app-react-router": "^1.2.0",
+    "@shopify/shopify-api": "^13.1.0",
+    "@shopify/shopify-app-react-router": "^1.2.1",
     "@shopify/shopify-app-session-storage": "^5.0.0",
     "drizzle-orm": "^0.45.2",
     "isbot": "^5.1.38",
@@ -38,14 +38,14 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
-    "react-router": "^7.14.1",
+    "react-router": "^7.18.1",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260415.0",
     "@eslint/js": "^9.37.0",
-    "@react-router/dev": "^7.14.1",
+    "@react-router/dev": "^7.18.1",
     "@shopify/cli": "^3.93.2",
     "@types/leaflet": "^1.9.15",
     "@types/papaparse": "^5.3.15",
@@ -61,7 +61,7 @@
     "vite": "^6.4.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.8",
-    "wrangler": "^4.83.0"
+    "wrangler": "^4.106.0"
   },
   "engines": {
     "node": ">=20"
