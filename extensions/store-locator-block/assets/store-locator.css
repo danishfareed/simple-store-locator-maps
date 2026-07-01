@@ -459,6 +459,339 @@
   text-decoration: underline;
 }
 
+/* ---- shared card media (image) ----------------------------------------- */
+.ssl-card__media {
+  margin: -14px -14px 4px;
+  border-radius: var(--ssl-radius) var(--ssl-radius) 0 0;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: #f3f4f6;
+}
+
+.ssl-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Visually hidden but readable by screen readers. */
+.ssl-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- finder view -------------------------------------------------------- */
+.ssl--finder .ssl-finder__stage {
+  position: relative;
+  height: var(--ssl-hero-h, 480px);
+  border-radius: var(--ssl-radius);
+  overflow: hidden;
+}
+
+.ssl--finder .ssl-finder__stage .ssl-map {
+  height: 100%;
+  border: 1px solid var(--ssl-border);
+}
+
+.ssl-finder__hero {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.ssl-finder__hero-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 560px;
+  padding: 10px;
+  border-radius: calc(var(--ssl-radius) + 4px);
+  background: var(--ssl-bg);
+  box-shadow: var(--ssl-shadow-lift);
+  pointer-events: auto;
+}
+
+.ssl-finder__search {
+  flex: 1 1 240px;
+}
+
+.ssl-finder__nearme {
+  flex: 0 0 auto;
+}
+
+.ssl-finder__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ssl-finder__filters {
+  margin-bottom: 2px;
+}
+
+.ssl-finder__results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+/* ---- carousel view ------------------------------------------------------ */
+.ssl--carousel .ssl-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ssl-carousel__map {
+  height: 260px;
+  border: 1px solid var(--ssl-border);
+  border-radius: var(--ssl-radius);
+  overflow: hidden;
+}
+
+.ssl-carousel__map .ssl-map {
+  height: 100%;
+}
+
+.ssl-carousel__viewport {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ssl-carousel__track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  padding: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ssl-carousel__slide {
+  flex: 0 0
+    calc(
+      (100% - (var(--ssl-cards-per-view, 3) - 1) * 12px) /
+        var(--ssl-cards-per-view, 3)
+    );
+  scroll-snap-align: start;
+  cursor: default;
+}
+
+.ssl-carousel__nav {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--ssl-border);
+  border-radius: 999px;
+  background: var(--ssl-bg);
+  color: inherit;
+  box-shadow: var(--ssl-shadow);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ssl-carousel__nav--prev {
+  left: -8px;
+}
+
+.ssl-carousel__nav--next {
+  right: -8px;
+}
+
+.ssl-carousel__nav:hover {
+  border-color: var(--ssl-accent);
+  color: var(--ssl-accent);
+}
+
+.ssl-carousel__nav:focus-visible {
+  outline: 2px solid var(--ssl-accent);
+  outline-offset: 2px;
+}
+
+.ssl-carousel__nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ---- list / grid view --------------------------------------------------- */
+.ssl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--ssl-columns, 3), minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ssl-list__card {
+  cursor: default;
+}
+
+.ssl-list__card:hover {
+  transform: none;
+  box-shadow: var(--ssl-shadow);
+}
+
+.ssl-list__maplink {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ssl-accent);
+  text-decoration: none;
+}
+
+.ssl-list__maplink:hover {
+  text-decoration: underline;
+}
+
+.ssl-list__maplink:focus-visible {
+  outline: 2px solid var(--ssl-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- single store view -------------------------------------------------- */
+.ssl-single {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  border: 1px solid var(--ssl-border);
+  border-radius: var(--ssl-radius);
+  background: var(--ssl-bg);
+  box-shadow: var(--ssl-shadow);
+  padding: 16px;
+}
+
+.ssl-single__media {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ssl-single__image {
+  border-radius: var(--ssl-radius);
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: #f3f4f6;
+}
+
+.ssl-single__map {
+  height: 280px;
+  border: 1px solid var(--ssl-border);
+  border-radius: var(--ssl-radius);
+  overflow: hidden;
+}
+
+.ssl-single__map .ssl-map {
+  height: 100%;
+}
+
+.ssl-single__details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ssl-single__header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ssl-single__name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.ssl-single__addr {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ssl-muted);
+}
+
+.ssl-single__actions {
+  margin-top: 4px;
+}
+
+.ssl-single__hours-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ssl-hours {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ssl-hours__row {
+  border-top: 1px solid var(--ssl-border);
+}
+
+.ssl-hours__row:first-child {
+  border-top: 0;
+}
+
+.ssl-hours__day {
+  padding: 7px 8px 7px 0;
+  text-align: left;
+  font-weight: 500;
+  color: inherit;
+}
+
+.ssl-hours__time {
+  padding: 7px 0;
+  text-align: right;
+  color: var(--ssl-muted);
+}
+
+.ssl-hours__row--today {
+  font-weight: 600;
+}
+
+.ssl-hours__row--today .ssl-hours__day,
+.ssl-hours__row--today .ssl-hours__time {
+  color: var(--ssl-accent);
+}
+
+.ssl-single__unavailable {
+  border: 1px solid var(--ssl-border);
+  border-radius: var(--ssl-radius);
+  background: var(--ssl-bg);
+}
+
 /* ---- leaflet pin tweaks ------------------------------------------------- */
 .ssl-leaflet-pin {
   background: transparent;
@@ -519,6 +852,41 @@
   .ssl-grid .ssl-map {
     height: var(--ssl-height);
   }
+
+  /* Single: stack media over details. */
+  .ssl-single {
+    grid-template-columns: 1fr;
+  }
+
+  /* Finder: results collapse to a single column. */
+  .ssl-finder__results {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Carousel + list column responsiveness (independent breakpoints). */
+@container (max-width: 900px) {
+  .ssl-carousel__slide {
+    flex-basis: calc((100% - 12px) / 2);
+  }
+
+  .ssl-list {
+    grid-template-columns: repeat(min(var(--ssl-columns, 3), 2), minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 560px) {
+  .ssl-carousel__slide {
+    flex-basis: 100%;
+  }
+
+  .ssl-list {
+    grid-template-columns: 1fr;
+  }
+
+  .ssl-finder__hero-inner {
+    max-width: none;
+  }
 }
 
 /* ---- reduced motion ----------------------------------------------------- */
@@ -537,5 +905,10 @@
 
   .ssl-leaflet-pin--active {
     transform: none;
+  }
+
+  /* Carousel: no smooth scroll animation when reduced motion is requested. */
+  .ssl-carousel__track {
+    scroll-behavior: auto;
   }
 }

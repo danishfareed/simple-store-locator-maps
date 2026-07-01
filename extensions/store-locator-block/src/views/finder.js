@@ -1,15 +1,17 @@
-// Flagship Map + List view.
+// Finder view.
 //
-// Layout: sidebar (search + near-me + filter chips + scrollable result cards)
-// beside the map. Clicking a card highlights + centers its marker. Searching
-// geocodes the query (debounced) and re-sorts by distance. Near-me uses the
-// browser geolocation API. Analytics fire for search/directions/call.
+// Layout: a prominent centered hero search bar + "Use my location" floating over
+// a full-width map (height from config.heroHeight, default ~480px), with the
+// result cards in a scrollable panel below. If config.showFilterBar, a filter
+// chip row sits under the hero search. Reuses the shared card component and the
+// same search / near-me / geocode logic as the Map+List view.
 
 import {
   formatAddress,
   buildOpenPill,
   buildDistanceChip,
   buildActions,
+  buildCardImage,
   iconSearch,
   iconClear,
   iconPin,
@@ -18,41 +20,32 @@ import {
 
 const SEARCH_DEBOUNCE_MS = 500;
 const MIN_QUERY_LEN = 2;
+const DEFAULT_HERO_HEIGHT = 480;
 
 /**
  * @param {HTMLElement} shell  the `.ssl` container from core.js
  * @param {object} ctx         { provider, mapEl, locations, widget, config,
  *                               proxyBase, track, geocode, helpers }
  */
-export function renderMapList(shell, ctx) {
-  const {
-    provider,
-    mapEl,
-    locations,
-    widget,
-    config,
-    track,
-    geocode,
-    helpers,
-  } = ctx;
-  const { el, clear, sortByDistance, formatDistance, isOpenNow, directionsUrl } =
-    helpers;
+export function renderFinder(shell, ctx) {
+  const { provider, mapEl, locations, widget, config, track, geocode, helpers } = ctx;
+  const { el, clear, sortByDistance, formatDistance, isOpenNow, directionsUrl } = helpers;
 
   const unitSystem = config.unitSystem || "metric";
   const timezone = widget.timezone || undefined;
-  const sidebarPosition = config.sidebarPosition === "right" ? "right" : "left";
   const showDirections = config.showDirections !== false;
   const showPhone = config.showPhone !== false;
   const enableNearMe = config.enableNearMe !== false;
+  const showFilterBar = Boolean(config.showFilterBar);
+  const heroHeight = Number(config.heroHeight) > 0 ? Number(config.heroHeight) : DEFAULT_HERO_HEIGHT;
 
   // ---- state --------------------------------------------------------------
   let center = config.defaultCenter || null;
-  let activeFilters = new Set();
+  const activeFilters = new Set();
   let selectedId = null;
-  /** all locations, possibly distance-annotated */
   let working = locations.slice();
 
-  // ---- DOM scaffold -------------------------------------------------------
+  // ---- hero search --------------------------------------------------------
   const searchInput = el("input", {
     type: "search",
     class: "ssl-search__input",
@@ -64,18 +57,13 @@ export function renderMapList(shell, ctx) {
 
   const clearBtn = el(
     "button",
-    {
-      type: "button",
-      class: "ssl-search__clear",
-      "aria-label": "Clear search",
-      hidden: true,
-    },
+    { type: "button", class: "ssl-search__clear", "aria-label": "Clear search", hidden: true },
     iconClear(el),
   );
 
   const searchForm = el(
     "form",
-    { class: "ssl-search", role: "search" },
+    { class: "ssl-search ssl-finder__search", role: "search" },
     el("span", { class: "ssl-search__icon", "aria-hidden": "true" }, iconSearch(el)),
     searchInput,
     clearBtn,
@@ -84,52 +72,45 @@ export function renderMapList(shell, ctx) {
   const nearMeBtn = enableNearMe
     ? el(
         "button",
-        { type: "button", class: "ssl-nearme" },
+        { type: "button", class: "ssl-nearme ssl-finder__nearme" },
         iconPin(el),
         el("span", null, "Use my location"),
       )
     : null;
 
-  const chipRow = buildFilterChips();
+  const hero = el(
+    "div",
+    { class: "ssl-finder__hero" },
+    el("div", { class: "ssl-finder__hero-inner" }, searchForm, nearMeBtn),
+  );
 
+  const chipRow = showFilterBar ? buildFilterChips() : null;
+
+  const stage = el(
+    "div",
+    { class: "ssl-finder__stage", style: { "--ssl-hero-h": `${heroHeight}px` } },
+    mapEl,
+    hero,
+  );
+
+  // ---- results panel ------------------------------------------------------
+  const resultsCount = el("p", { class: "ssl-results__count" });
   const resultsList = el("ul", {
-    class: "ssl-results",
+    class: "ssl-results ssl-finder__results",
     "aria-live": "polite",
     "aria-label": "Locations",
   });
-
-  const resultsCount = el("p", { class: "ssl-results__count", "aria-hidden": "false" });
-
-  const sidebar = el(
+  const panel = el(
     "div",
-    { class: "ssl-sidebar" },
-    searchForm,
-    nearMeBtn,
+    { class: "ssl-finder__panel" },
     chipRow,
     resultsCount,
     resultsList,
   );
 
-  const grid = el("div", { class: "ssl-grid", dataset: { sidebar: sidebarPosition } });
-  if (sidebarPosition === "right") {
-    grid.appendChild(mapEl);
-    grid.appendChild(sidebar);
-  } else {
-    grid.appendChild(sidebar);
-    grid.appendChild(mapEl);
-  }
-
-  // Mobile list/map toggle.
-  const toggle = el(
-    "div",
-    { class: "ssl-toggle", role: "tablist", "aria-label": "View mode" },
-    toggleBtn("list", "List", true),
-    toggleBtn("map", "Map", false),
-  );
-
   clear(shell);
-  shell.appendChild(toggle);
-  shell.appendChild(grid);
+  shell.appendChild(stage);
+  shell.appendChild(panel);
 
   // ---- provider wiring ----------------------------------------------------
   provider.on("ready", () => {
@@ -152,11 +133,7 @@ export function renderMapList(shell, ctx) {
     if (!working.length) {
       resultsCount.textContent = "";
       resultsList.appendChild(
-        el(
-          "li",
-          { class: "ssl-empty" },
-          el("p", null, "No locations found — try a wider search."),
-        ),
+        el("li", { class: "ssl-empty" }, el("p", null, "No locations found — try a wider search.")),
       );
       return;
     }
@@ -165,9 +142,7 @@ export function renderMapList(shell, ctx) {
       working.length === 1 ? "1 location" : `${working.length} locations`;
 
     const now = new Date();
-    working.forEach((loc) => {
-      resultsList.appendChild(buildCard(loc, now));
-    });
+    working.forEach((loc) => resultsList.appendChild(buildCard(loc, now)));
   }
 
   function buildCard(loc, now) {
@@ -204,6 +179,7 @@ export function renderMapList(shell, ctx) {
           }
         },
       },
+      buildCardImage(el, loc),
       el("h3", { class: "ssl-card__name" }, loc.name || "Location"),
       addr ? el("p", { class: "ssl-card__addr" }, addr) : null,
       meta,
@@ -216,20 +192,20 @@ export function renderMapList(shell, ctx) {
   // ---- interactions -------------------------------------------------------
   function selectLocation(id, opts = {}) {
     selectedId = id == null ? null : String(id);
-    // Toggle active card styling + aria without a full re-render.
     resultsList.querySelectorAll(".ssl-card").forEach((card) => {
       const isActive = card.dataset.id === selectedId;
       card.classList.toggle("ssl-card--active", isActive);
       card.setAttribute("aria-pressed", String(isActive));
       if (isActive && !opts.fromMap) {
-        card.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+        card.scrollIntoView({
+          block: "nearest",
+          behavior: prefersReducedMotion() ? "auto" : "smooth",
+        });
       }
     });
     if (selectedId != null) {
       provider.highlight(selectedId);
       track("click", { locationId: selectedId });
-      // On mobile, a card tap jumps to the map so the highlight is visible.
-      if (!opts.fromMap && isMobile()) switchMode("map");
     }
   }
 
@@ -253,7 +229,7 @@ export function renderMapList(shell, ctx) {
       return;
     }
     center = geo;
-    working = sortByDistance(locations.slice(), center);
+    working = sortByDistance(applyFilters(locations.slice()), center);
     selectedId = null;
     renderResults();
     paintMarkers();
@@ -330,7 +306,6 @@ export function renderMapList(shell, ctx) {
     if (configured.length) {
       configured.forEach((v) => v && values.add(String(v)));
     } else {
-      // Derive from location services when nothing is configured.
       locations.forEach((loc) => {
         (Array.isArray(loc.services) ? loc.services : []).forEach(
           (s) => s && values.add(String(s)),
@@ -344,7 +319,7 @@ export function renderMapList(shell, ctx) {
     const values = collectFilterValues();
     if (!values.length) return el("div", { class: "ssl-filters", hidden: true });
     const row = el("div", {
-      class: "ssl-filters",
+      class: "ssl-filters ssl-finder__filters",
       role: "group",
       "aria-label": "Filter locations",
     });
@@ -380,34 +355,6 @@ export function renderMapList(shell, ctx) {
     if (working.length) provider.fitBounds(working);
   }
 
-  // ---- mobile toggle ------------------------------------------------------
-  function toggleBtn(mode, label, active) {
-    return el(
-      "button",
-      {
-        type: "button",
-        class: `ssl-toggle__btn${active ? " ssl-toggle__btn--active" : ""}`,
-        role: "tab",
-        "aria-selected": String(active),
-        dataset: { mode },
-        onClick: () => switchMode(mode),
-      },
-      label,
-    );
-  }
-
-  function switchMode(mode) {
-    grid.dataset.mode = mode;
-    toggle.querySelectorAll(".ssl-toggle__btn").forEach((b) => {
-      const on = b.dataset.mode === mode;
-      b.classList.toggle("ssl-toggle__btn--active", on);
-      b.setAttribute("aria-selected", String(on));
-    });
-    if (mode === "map" && provider._map && typeof provider._map.invalidateSize === "function") {
-      setTimeout(() => provider._map.invalidateSize(), 0);
-    }
-  }
-
   // ---- event listeners ----------------------------------------------------
   let searchTimer = null;
   searchInput.addEventListener("input", () => {
@@ -432,8 +379,4 @@ export function renderMapList(shell, ctx) {
   // ---- initial paint ------------------------------------------------------
   if (center) working = sortByDistance(working, center);
   renderResults();
-
-  function isMobile() {
-    return shell.clientWidth > 0 && shell.clientWidth < 720;
-  }
 }

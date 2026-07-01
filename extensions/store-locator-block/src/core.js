@@ -13,21 +13,22 @@ import { track } from "./lib/analytics.js";
 import { createLeafletProvider } from "./providers/leaflet.js";
 import { createGoogleProvider } from "./providers/google.js";
 import { renderMapList } from "./views/mapList.js";
+import { renderFinder } from "./views/finder.js";
+import { renderCarousel } from "./views/carousel.js";
+import { renderList } from "./views/list.js";
+import { renderSingle } from "./views/single.js";
 
 // Pure, client-safe utilities shared with the admin (type-only TS imports).
 import { isOpenNow } from "../../../app/lib/utils/hours";
 import { directionsUrl } from "../../../app/lib/utils/directions";
 
-/**
- * View registry keyed by widget.type. 6B-2 adds finder/carousel/list/single;
- * until then every type renders the Map+List view so nothing is blank.
- */
+/** View registry keyed by widget.type. Unknown types fall back to Map+List. */
 const VIEWS = {
   map_list: renderMapList,
-  finder: renderMapList,
-  carousel: renderMapList,
-  list: renderMapList,
-  single: renderMapList,
+  finder: renderFinder,
+  carousel: renderCarousel,
+  list: renderList,
+  single: renderSingle,
 };
 
 function boot() {
@@ -73,7 +74,11 @@ async function initWidget(root) {
     "aria-label": "Map of locations",
   });
 
-  const provider = await createProvider({ el: mapEl, widget, config });
+  // The List/Grid view is map-less: don't load a map SDK it will never use.
+  const provider =
+    widget.type === "list"
+      ? null
+      : await createProvider({ el: mapEl, widget, config });
 
   const trackBound = (type, payload) => track(proxyBase, type, payload);
   const geocodeBound = (query) =>
