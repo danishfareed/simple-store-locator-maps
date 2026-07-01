@@ -203,6 +203,11 @@ export const widgets = sqliteTable(
     provider: text("provider", { enum: ["leaflet", "google"] })
       .notNull()
       .default("leaflet"),
+    type: text("type", {
+      enum: ["map_list", "finder", "carousel", "list", "single"],
+    })
+      .notNull()
+      .default("map_list"),
     config: text("config", { mode: "json" }).$type<WidgetConfig>().notNull(),
     isPublished: integer("is_published", { mode: "boolean" })
       .notNull()
@@ -219,19 +224,43 @@ export const widgets = sqliteTable(
   }),
 );
 
+export type WidgetType = "map_list" | "finder" | "carousel" | "list" | "single";
+
 export interface WidgetConfig {
+  type?: WidgetType;
   defaultCenter?: { lat: number; lng: number };
   defaultZoom?: number;
   searchRadiusKm?: number;
   showHours?: boolean;
   showPhone?: boolean;
   showDirections?: boolean;
+  clustering?: boolean;
+  enableNearMe?: boolean;
+  categories?: string[];
   filters?: { services?: string[]; countries?: string[] };
   theme?: {
     primaryColor?: string;
     markerColor?: string;
+    backgroundColor?: string;
+    textColor?: string;
     fontFamily?: string;
   };
+  // map_list
+  sidebarPosition?: "left" | "right";
+  resultsPerPage?: number;
+  // finder
+  heroHeight?: number;
+  showFilterBar?: boolean;
+  // carousel
+  cardsPerView?: number;
+  autoplay?: boolean;
+  showMiniMap?: boolean;
+  // list
+  columns?: number;
+  showMapLink?: boolean;
+  // single
+  locationId?: string;
+  showContactForm?: boolean;
 }
 
 /* ───────────── Imports ───────────── */
