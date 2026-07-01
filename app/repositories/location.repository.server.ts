@@ -107,6 +107,26 @@ export async function bulkDeleteLocations(db: Database, shopId: string, ids: str
 }
 
 /**
+ * Bulk status change (activate/deactivate/etc.), shop-scoped and id-scoped so
+ * a merchant can never affect another shop's rows via a crafted id list.
+ */
+export async function setLocationsStatus(
+  db: Database,
+  shopId: string,
+  ids: string[],
+  status: "active" | "inactive" | "draft",
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const rows = await db
+    .update(locations)
+    .set({ status, updatedAt: new Date() })
+    .where(and(eq(locations.shopId, shopId), inArray(locations.id, ids)))
+    .returning({ id: locations.id })
+    .all();
+  return rows.length;
+}
+
+/**
  * Bounding-box pre-filter for storefront search. We compute a rough lat/lng
  * window from the radius and let the caller do precise Haversine ranking in
  * application code — D1 has no spatial extensions and Haversine in SQL is both

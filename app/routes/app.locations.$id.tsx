@@ -79,6 +79,13 @@ export default function EditLocation() {
 function normaliseForm(form: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
   for (const [k, v] of form.entries()) obj[k] = v === "" ? undefined : v;
+  if (typeof obj.hours === "string") {
+    try {
+      obj.hours = JSON.parse(obj.hours);
+    } catch {
+      obj.hours = undefined;
+    }
+  }
   return obj;
 }
 

@@ -19,6 +19,8 @@ export interface MapPickerProps {
   zoom?: number;
   /** Map height in px. */
   height?: number;
+  /** Prefills the "Use address" search field (e.g. from a form's address inputs). */
+  initialAddress?: string;
 }
 
 /**
@@ -31,11 +33,18 @@ export interface MapPickerProps {
  * Leaflet map component and swaps it in. The Leaflet code therefore never
  * enters the server module graph.
  */
-export function MapPicker({ value, onChange, zoom = 12, height = 320 }: MapPickerProps) {
+export function MapPicker({
+  value,
+  onChange,
+  zoom = 12,
+  height = 320,
+  initialAddress,
+}: MapPickerProps) {
   const [MapComp, setMapComp] = useState<ComponentType<LeafletMapPickerProps> | null>(
     null,
   );
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(initialAddress ?? "");
+  const [addressTouched, setAddressTouched] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
 
@@ -48,6 +57,14 @@ export function MapPicker({ value, onChange, zoom = 12, height = 320 }: MapPicke
       active = false;
     };
   }, []);
+
+  // Keep the search field in sync with the form's address fields until the
+  // merchant edits it directly — after that, respect their input.
+  useEffect(() => {
+    if (!addressTouched && initialAddress !== undefined) {
+      setAddress(initialAddress);
+    }
+  }, [initialAddress, addressTouched]);
 
   async function geocode() {
     const q = address.trim();
@@ -83,7 +100,10 @@ export function MapPicker({ value, onChange, zoom = 12, height = 320 }: MapPicke
             placeholder="Search an address to drop the pin"
             autoComplete="off"
             value={address}
-            onChange={setAddress}
+            onChange={(v) => {
+              setAddressTouched(true);
+              setAddress(v);
+            }}
             error={geoError ?? undefined}
             connectedRight={
               <Button onClick={geocode} loading={geocoding} disabled={!address.trim()}>

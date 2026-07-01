@@ -1,5 +1,5 @@
 import { Form } from "react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BlockStack,
   Button,
@@ -10,7 +10,10 @@ import {
   TextField,
   Text,
 } from "@shopify/polaris";
-import type { Location } from "../../lib/db/schema";
+import type { Location, LocationHours } from "../../lib/db/schema";
+import { MapPicker } from "./MapPicker";
+import type { LatLng } from "./LeafletMapPicker";
+import { HoursEditor, emptyHours } from "./HoursEditor";
 
 export interface LocationFormProps {
   defaultValues?: Partial<Location>;
@@ -55,11 +58,38 @@ export function LocationForm({
     return out;
   });
 
+  const [hours, setHours] = useState<LocationHours>(
+    () => defaultValues?.hours ?? emptyHours(),
+  );
+
   const bind = (name: (typeof FIELDS)[number]) => ({
     name,
     value: vals[name] ?? "",
     onChange: (value: string) => setVals((s) => ({ ...s, [name]: value })),
   });
+
+  const pin: LatLng | null =
+    vals.latitude && vals.longitude
+      ? { lat: Number(vals.latitude), lng: Number(vals.longitude) }
+      : null;
+
+  function setPin(next: LatLng) {
+    setVals((s) => ({
+      ...s,
+      latitude: String(next.lat),
+      longitude: String(next.lng),
+    }));
+  }
+
+  // Prefills MapPicker's "Use address" search with the address currently on
+  // the form, so the merchant doesn't have to retype it to geocode.
+  const addressQuery = useMemo(
+    () =>
+      [vals.addressLine1, vals.city, vals.region, vals.postalCode, vals.countryCode]
+        .filter(Boolean)
+        .join(", "),
+    [vals.addressLine1, vals.city, vals.region, vals.postalCode, vals.countryCode],
+  );
 
   return (
     <Form method="post">
@@ -153,6 +183,7 @@ export function LocationForm({
                   type="number"
                   step={0.000001}
                   autoComplete="off"
+                  error={fieldErrors?.latitude}
                   {...bind("latitude")}
                 />
                 <TextField
@@ -160,10 +191,36 @@ export function LocationForm({
                   type="number"
                   step={0.000001}
                   autoComplete="off"
+                  error={fieldErrors?.longitude}
                   {...bind("longitude")}
                 />
               </FormLayout.Group>
             </FormLayout>
+          </BlockStack>
+        </Card>
+
+        <Card>
+          <BlockStack gap="300">
+            <Text as="h2" variant="headingSm">
+              Map location
+            </Text>
+            <Text as="p" tone="subdued">
+              Click the map to drop a pin, or search the address above to geocode it.
+            </Text>
+            <MapPicker value={pin} onChange={setPin} initialAddress={addressQuery} />
+          </BlockStack>
+        </Card>
+
+        <Card>
+          <BlockStack gap="300">
+            <Text as="h2" variant="headingSm">
+              Hours
+            </Text>
+            <Text as="p" tone="subdued">
+              Set opening and closing times for each day, or mark a day closed.
+            </Text>
+            <HoursEditor value={hours} onChange={setHours} />
+            <input type="hidden" name="hours" value={JSON.stringify(hours)} />
           </BlockStack>
         </Card>
 

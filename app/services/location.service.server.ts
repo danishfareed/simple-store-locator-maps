@@ -3,9 +3,11 @@ import { bboxForRadius, haversineKm } from "../lib/utils/geo";
 import { newId, slugify } from "../lib/utils/slug";
 import type { Location } from "../lib/db/schema";
 import {
+  bulkDeleteLocations,
   createLocation,
   getLocationBySlug,
   findLocationsInBbox,
+  setLocationsStatus,
   updateLocation,
 } from "../repositories/location.repository.server";
 import type { LocationInput } from "../schemas/location.schema";
@@ -115,4 +117,27 @@ export async function searchLocationsByRadius(
   }
   hits.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
   return hits.slice(0, limit);
+}
+
+/**
+ * Bulk activate/deactivate for the locations list's IndexTable selection.
+ * Shop-scoped via `setLocationsStatus` — a merchant can only ever affect
+ * their own rows regardless of what ids the client sends.
+ */
+export async function bulkSetLocationStatus(
+  db: Database,
+  shopId: string,
+  ids: string[],
+  status: "active" | "inactive" | "draft",
+): Promise<number> {
+  return setLocationsStatus(db, shopId, ids, status);
+}
+
+/** Bulk delete for the locations list's IndexTable selection (shop-scoped). */
+export async function bulkRemoveLocations(
+  db: Database,
+  shopId: string,
+  ids: string[],
+): Promise<number> {
+  return bulkDeleteLocations(db, shopId, ids);
 }

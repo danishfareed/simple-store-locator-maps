@@ -39,6 +39,7 @@ export default [
         clearInterval: "readonly",
         requestAnimationFrame: "readonly",
         cancelAnimationFrame: "readonly",
+        confirm: "readonly",
       },
     },
     plugins: {
@@ -47,6 +48,11 @@ export default [
       "react-hooks": reactHooks,
     },
     rules: {
+      // Base ESLint's no-unused-vars doesn't understand TS type-position
+      // parameter names (e.g. `onChange: (value: T) => void` inside an
+      // interface) and flags them as unused bindings. Disable it in favor of
+      // the TS-aware version below, which handles this correctly.
+      "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "react/jsx-uses-react": "off",
       "react/react-in-jsx-scope": "off",

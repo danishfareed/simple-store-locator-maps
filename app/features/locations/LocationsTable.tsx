@@ -1,10 +1,22 @@
-import { Link } from "react-router";
+import { Link, useSubmit } from "react-router";
 import { Badge, EmptyState, IndexTable, Text, useIndexResourceState } from "@shopify/polaris";
 import type { Location } from "../../lib/db/schema";
 
-export function LocationsTable({ items }: { items: Location[] }) {
+export interface LocationsTableProps {
+  items: Location[];
+}
+
+/**
+ * The locations list table. Selecting rows surfaces promoted bulk actions
+ * (Activate / Deactivate / Delete) that post to the route `action` via
+ * `useSubmit` with an `intent` + repeated `id` entries — the route handles
+ * every intent shop-scoped, so a merchant can never touch another shop's
+ * rows regardless of what ids get submitted.
+ */
+export function LocationsTable({ items }: LocationsTableProps) {
+  const submit = useSubmit();
   const resourceName = { singular: "location", plural: "locations" };
-  const { selectedResources, allResourcesSelected, handleSelectionChange } =
+  const { selectedResources, allResourcesSelected, handleSelectionChange, clearSelection } =
     useIndexResourceState(items as unknown as { [key: string]: unknown; id: string }[]);
 
   if (items.length === 0) {
@@ -19,13 +31,36 @@ export function LocationsTable({ items }: { items: Location[] }) {
     );
   }
 
+  function runBulk(intent: "activate" | "deactivate" | "delete") {
+    if (selectedResources.length === 0) return;
+    if (
+      intent === "delete" &&
+      !confirm(
+        `Delete ${selectedResources.length} location${
+          selectedResources.length === 1 ? "" : "s"
+        }? This can't be undone.`,
+      )
+    ) {
+      return;
+    }
+    const form = new FormData();
+    form.set("intent", intent);
+    for (const id of selectedResources) form.append("id", id);
+    submit(form, { method: "post" });
+    clearSelection();
+  }
+
   return (
     <IndexTable
       resourceName={resourceName}
       itemCount={items.length}
       selectedItemsCount={allResourcesSelected ? "All" : selectedResources.length}
       onSelectionChange={handleSelectionChange}
-      bulkActions={[]}
+      promotedBulkActions={[
+        { content: "Activate", onAction: () => runBulk("activate") },
+        { content: "Deactivate", onAction: () => runBulk("deactivate") },
+        { content: "Delete", onAction: () => runBulk("delete") },
+      ]}
       headings={[
         { title: "Name" },
         { title: "City" },
