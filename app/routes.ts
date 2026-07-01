@@ -26,4 +26,10 @@ export default [
 
   // Webhooks
   route("webhooks/app/uninstalled", "routes/webhooks.app.uninstalled.ts"),
+  route(
+    "webhooks/customers/data_request",
+    "routes/webhooks.customers.data_request.ts",
+  ),
+  route("webhooks/customers/redact", "routes/webhooks.customers.redact.ts"),
+  route("webhooks/shop/redact", "routes/webhooks.shop.redact.ts"),
 ] satisfies RouteConfig;
