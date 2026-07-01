@@ -54,6 +54,7 @@ export interface ShopSettings {
   defaultZoom?: number;
   unitSystem?: "metric" | "imperial";
   branding?: { primaryColor?: string; logoUrl?: string };
+  osmGeocoderUrl?: string;
 }
 
 /* ───────────── Shopify OAuth sessions ───────────── */
