@@ -496,6 +496,16 @@ export function WidgetEditor({
   );
 }
 
+// Strips characters that have no legitimate use in a CSS color value (quotes,
+// angle brackets, etc.) so a pasted/typed value can't carry markup-breaking
+// characters into the live preview's postMessage payload. This is UX polish
+// only — the authoritative guard is `safeColor` at the render sink in
+// extensions/store-locator-block/src/providers/leaflet.js.
+const UNSAFE_COLOR_CHARS = /["'<>`;]/g;
+function stripUnsafeColorChars(v: string): string {
+  return v.replace(UNSAFE_COLOR_CHARS, "");
+}
+
 /**
  * A hex color field pairing a native color swatch with a text input, so a
  * merchant can either pick visually or paste an exact hex.
@@ -539,7 +549,7 @@ function ColorField({
             labelHidden
             autoComplete="off"
             value={value}
-            onChange={onChange}
+            onChange={(v) => onChange(stripUnsafeColorChars(v))}
             disabled={disabled}
           />
         </div>

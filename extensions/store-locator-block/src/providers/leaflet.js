@@ -16,6 +16,39 @@ const DEFAULT_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const DEFAULT_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
+const DEFAULT_MARKER_COLOR = "#2c6ecb";
+
+// Strict allowlist for values interpolated into raw SVG markup. Anything not
+// matching one of these shapes (hex, rgb()/rgba(), or a short list of CSS
+// keyword colors) is rejected in favor of the default — this is the sink-side
+// guard against a crafted `markerColor` (e.g. from postMessage-fed preview
+// config) breaking out of the `fill="..."` attribute.
+const CSS_KEYWORD_COLORS = new Set([
+  "black", "white", "red", "green", "blue", "yellow", "orange", "purple",
+  "pink", "gray", "grey", "brown", "cyan", "magenta", "lime", "navy",
+  "teal", "maroon", "olive", "silver", "gold", "indigo", "violet",
+  "transparent", "currentcolor",
+]);
+
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{3,8}$/;
+const RGB_COLOR_RE = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+)\s*)?\)$/;
+
+/**
+ * Validate a color value before it is string-interpolated into raw SVG/HTML
+ * markup. Returns the value unchanged if it strictly matches an allowed
+ * shape, otherwise returns the safe default marker color.
+ * @param {unknown} c
+ * @returns {string}
+ */
+function safeColor(c) {
+  if (typeof c !== "string") return DEFAULT_MARKER_COLOR;
+  const trimmed = c.trim();
+  if (HEX_COLOR_RE.test(trimmed)) return trimmed;
+  if (RGB_COLOR_RE.test(trimmed)) return trimmed;
+  if (CSS_KEYWORD_COLORS.has(trimmed.toLowerCase())) return trimmed;
+  return DEFAULT_MARKER_COLOR;
+}
+
 /**
  * @param {{ el: HTMLElement, config: any }} args
  * @returns {Promise<object>} provider implementing the shared interface
@@ -58,7 +91,7 @@ export async function createLeafletProvider({ el, config }) {
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function makeIcon(color) {
-    const fill = color || "#2c6ecb";
+    const fill = safeColor(color || DEFAULT_MARKER_COLOR);
     const svg =
       `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42">` +
       `<path d="M15 0C7 0 1 6 1 14c0 9.5 12 26 13.1 27.4a1.2 1.2 0 0 0 1.9 0C17 40 29 23.5 29 14 29 6 23 0 15 0z" ` +

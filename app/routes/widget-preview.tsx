@@ -42,6 +42,9 @@ const HTML = `<!doctype html>
           });
         }
         window.addEventListener("message", function (e) {
+          // Reject cross-origin senders outright — only the same-origin
+          // authenticated parent editor is allowed to drive this preview.
+          if (e.origin !== window.location.origin) return;
           // Only act on our own message shape. We never echo data back out.
           if (e.data && e.data.type === "ssl-preview") render(e.data);
         });
