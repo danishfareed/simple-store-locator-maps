@@ -1,4 +1,5 @@
 name = "simple-store-locator"
+account_id = "a3749936404ad833278d480205927750"
 main = "./build/worker/index.js"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
@@ -7,10 +8,11 @@ assets = { directory = "./build/client", binding = "ASSETS" }
 
 [vars]
 # Public/non-secret vars only. Secrets → `wrangler secret put`.
-SHOPIFY_APP_URL = ""
+SHOPIFY_APP_URL = "https://simple-store-locator.fareedanish1.workers.dev"
 SCOPES = ""
 SHOPIFY_API_VERSION = "2026-04"
-APP_ENV = "development"
+# Live stores get real charges; Shopify dev stores force test charges regardless.
+APP_ENV = "production"
 
 [[d1_databases]]
 binding = "DB"
