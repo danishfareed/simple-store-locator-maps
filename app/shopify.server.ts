@@ -5,6 +5,7 @@ import {
 } from "@shopify/shopify-app-react-router/server";
 import type { CloudflareEnv } from "../workers/app";
 import { D1SessionStorage } from "./lib/shopify/session-storage.server";
+import { BILLING_CONFIG } from "./lib/billing/plans";
 
 type AppInstance = ReturnType<typeof shopifyApp>;
 
@@ -30,6 +31,11 @@ export function getShopify(env: CloudflareEnv): AppInstance {
     sessionStorage: new D1SessionStorage(env.DB),
     distribution: AppDistribution.AppStore,
     isEmbeddedApp: true,
+    // Static billing config (two keys → the same premium tier: monthly &
+    // annual). Charge creation/confirmation is handled by the package via
+    // `auth.billing.request`; we keep the D1 subscription/shop rows in sync in
+    // the `app_subscriptions/update` webhook. See app/lib/billing/plans.ts.
+    billing: BILLING_CONFIG,
   });
 
   cache.set(env.DB, app);

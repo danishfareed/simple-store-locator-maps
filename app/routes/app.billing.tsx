@@ -1,6 +1,6 @@
+import { useState } from "react";
 import {
   Form,
-  redirect,
   useLoaderData,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
@@ -8,114 +8,211 @@ import {
 import {
   Badge,
   BlockStack,
+  Box,
   Button,
+  ButtonGroup,
   Card,
   InlineGrid,
+  InlineStack,
+  List,
   Page,
   Text,
 } from "@shopify/polaris";
-import { eq } from "drizzle-orm";
 import { requireAdmin } from "../lib/auth/admin.server";
-import { shops } from "../lib/db/schema";
+import { listPlans } from "../repositories/subscription.repository.server";
 import {
-  getActiveSubscription,
-  listPlans,
-} from "../repositories/subscription.repository.server";
-import { createCharge } from "../services/billing.service.server";
+  billingKeyForCadence,
+  cancelSubscription,
+  getActivePlanHandle,
+  recordPendingCharge,
+  type BillingCadence,
+} from "../services/billing.service.server";
+import {
+  PREMIUM_ANNUAL_CENTS,
+  PREMIUM_MONTHLY_CENTS,
+  PREMIUM_TRIAL_DAYS,
+} from "../lib/billing/plans";
+
+function charm(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const { db, shop } = await requireAdmin(request, context);
-  const [plans, active] = await Promise.all([
+  const [plans, currentPlan] = await Promise.all([
     listPlans(db),
-    getActiveSubscription(db, shop.id),
+    getActivePlanHandle(db, shop.id),
   ]);
-  return { plans, active, currentPlan: shop.planHandle };
+  return {
+    plans,
+    currentPlan,
+    premiumMonthly: charm(PREMIUM_MONTHLY_CENTS),
+    premiumAnnual: charm(PREMIUM_ANNUAL_CENTS),
+    trialDays: PREMIUM_TRIAL_DAYS,
+  };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
-  const { db, shop, shopify, env } = await requireAdmin(request, context);
+  const { db, shop, auth, env } = await requireAdmin(request, context);
   const form = await request.formData();
   const planHandle = String(form.get("plan") ?? "");
-  const [plans] = await Promise.all([listPlans(db)]);
-  const plan = plans.find((p) => p.handle === planHandle);
-  if (!plan) return { error: "Unknown plan" };
+  const cadence = (String(form.get("cadence") ?? "monthly") as BillingCadence);
 
-  if (plan.priceCents === 0) {
-    await db
-      .update(shops)
-      .set({ planHandle: "free", updatedAt: new Date() })
-      .where(eq(shops.id, shop.id));
-    return redirect("/app/billing");
+  if (planHandle === "free") {
+    await cancelSubscription(db, shop.id);
+    return { ok: true as const };
   }
 
-  const { confirmationUrl } = await createCharge(db, {
-    shopId: shop.id,
-    plan,
-    returnUrl: `${env.SHOPIFY_APP_URL}/app/billing?confirmed=1`,
-    shopifyCreate: async (args) => {
-      // Thin adapter over the Shopify package's billing request. On Workers,
-      // the package is responsible for calling the Admin API with the current
-      // session and returning the confirmation URL.
-      const billing = (shopify as unknown as {
-        billing: {
-          require: (opts: {
-            session: unknown;
-            plans: string[];
-            isTest: boolean;
-            onFailure: (_: unknown) => Promise<Response>;
-          }) => Promise<{ confirmationUrl?: string }>;
-        };
-      }).billing;
-      const res = await billing.require({
-        session: { shop: shop.id } as unknown,
-        plans: [args.handle],
-        isTest: env.APP_ENV !== "production",
-        onFailure: async () => new Response("Billing required", { status: 402 }),
-      });
-      return {
-        chargeId: "pending",
-        confirmationUrl: res.confirmationUrl ?? args.returnUrl,
-      };
-    },
-  });
+  if (planHandle !== "premium") {
+    return { ok: false as const, error: "Unknown plan" };
+  }
 
-  return redirect(confirmationUrl);
+  // Persist our pending-subscription row, then hand the merchant off to
+  // Shopify's managed confirmation page. `auth.billing.request` returns
+  // `Promise<never>` — it THROWS a redirect Response — so control never
+  // returns here on success; the thrown Response propagates and redirects.
+  await recordPendingCharge(db, shop.id);
+
+  // `auth.billing.request` returns `Promise<never>` and throws a redirect
+  // Response to Shopify's confirmation page. Its `plan` param is typed as
+  // `keyof Config['billing']`, which collapses to `never` because our
+  // `shopifyApp` config is built dynamically in a factory (TS can't infer the
+  // literal billing keys statically). The runtime value is a real billing key,
+  // so we cast the options to the request's parameter type.
+  type RequestFn = typeof auth.billing.request;
+  type RequestOpts = Parameters<RequestFn>[0];
+  return auth.billing.request({
+    plan: billingKeyForCadence(cadence),
+    isTest: env.APP_ENV !== "production",
+    returnUrl: `${env.SHOPIFY_APP_URL}/app/billing?confirmed=1`,
+  } as unknown as RequestOpts);
 }
 
 export default function Billing() {
-  const { plans, currentPlan } = useLoaderData<typeof loader>();
+  const { plans, currentPlan, premiumMonthly, premiumAnnual, trialDays } =
+    useLoaderData<typeof loader>();
+  const [cadence, setCadence] = useState<BillingCadence>("monthly");
+
+  const free = plans.find((p) => p.handle === "free");
+  const premium = plans.find((p) => p.handle === "premium");
 
   return (
-    <Page title="Billing">
-      <InlineGrid columns={{ xs: 1, sm: 2, md: 4 }} gap="300">
-        {plans.map((p) => (
-          <Card key={p.handle}>
-            <BlockStack gap="200">
-              <Text as="h3" variant="headingMd">
-                {p.name}
-              </Text>
-              {p.handle === currentPlan ? (
-                <Badge tone="success">Current</Badge>
-              ) : null}
-              <Text as="p" variant="headingLg">
-                {p.priceCents === 0
-                  ? "Free"
-                  : `${(p.priceCents / 100).toFixed(0)} ${p.currency}/mo`}
-              </Text>
-              <Text as="p" tone="subdued">
-                {p.maxLocations.toLocaleString()} locations · {p.maxImportsPerMonth}{" "}
-                imports/mo
-              </Text>
-              <Form method="post">
-                <input type="hidden" name="plan" value={p.handle} />
-                <Button submit disabled={p.handle === currentPlan}>
-                  {p.handle === currentPlan ? "Active" : "Choose"}
-                </Button>
-              </Form>
-            </BlockStack>
-          </Card>
-        ))}
-      </InlineGrid>
+    <Page title="Plans & billing">
+      <BlockStack gap="400">
+        <Text as="p" tone="subdued">
+          Pick the plan that fits your store. Upgrade or downgrade anytime.
+        </Text>
+
+        <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
+          {/* ── Free ── */}
+          {free ? (
+            <Card>
+              <BlockStack gap="300">
+                <InlineStack align="space-between" blockAlign="center">
+                  <Text as="h3" variant="headingMd">
+                    {free.name}
+                  </Text>
+                  {currentPlan === "free" ? (
+                    <Badge tone="success">Current plan</Badge>
+                  ) : null}
+                </InlineStack>
+                <Text as="p" variant="heading2xl">
+                  $0
+                  <Text as="span" variant="bodyMd" tone="subdued">
+                    {" "}
+                    /mo
+                  </Text>
+                </Text>
+                <List>
+                  <List.Item>Up to {free.maxLocations} locations</List.Item>
+                  <List.Item>Map + list widget</List.Item>
+                  <List.Item>OpenStreetMap</List.Item>
+                  <List.Item>CSV import</List.Item>
+                </List>
+                <Box>
+                  <Form method="post">
+                    <input type="hidden" name="plan" value="free" />
+                    <Button submit disabled={currentPlan === "free"} fullWidth>
+                      {currentPlan === "free" ? "Current plan" : "Downgrade to Free"}
+                    </Button>
+                  </Form>
+                </Box>
+              </BlockStack>
+            </Card>
+          ) : null}
+
+          {/* ── Premium ── */}
+          {premium ? (
+            <Card>
+              <BlockStack gap="300">
+                <InlineStack align="space-between" blockAlign="center">
+                  <Text as="h3" variant="headingMd">
+                    {premium.name}
+                  </Text>
+                  {currentPlan === "premium" ? (
+                    <Badge tone="success">Current plan</Badge>
+                  ) : (
+                    <Badge tone="info">Recommended</Badge>
+                  )}
+                </InlineStack>
+
+                <Box>
+                  <ButtonGroup variant="segmented">
+                    <Button
+                      pressed={cadence === "monthly"}
+                      onClick={() => setCadence("monthly")}
+                    >
+                      Monthly
+                    </Button>
+                    <Button
+                      pressed={cadence === "annual"}
+                      onClick={() => setCadence("annual")}
+                    >
+                      Annual
+                    </Button>
+                  </ButtonGroup>
+                </Box>
+
+                <Text as="p" variant="heading2xl">
+                  {cadence === "monthly" ? premiumMonthly : premiumAnnual}
+                  <Text as="span" variant="bodyMd" tone="subdued">
+                    {" "}
+                    {cadence === "monthly" ? "/mo" : "/yr"}
+                  </Text>
+                </Text>
+                <Text as="p" tone="subdued" variant="bodySm">
+                  {trialDays}-day free trial. Cancel anytime.
+                </Text>
+
+                <List>
+                  <List.Item>Up to {premium.maxLocations} locations</List.Item>
+                  <List.Item>All 5 widget types</List.Item>
+                  <List.Item>OpenStreetMap + Google Maps</List.Item>
+                  <List.Item>CSV + XLSX import</List.Item>
+                  <List.Item>Remove “Powered by” branding</List.Item>
+                </List>
+
+                <Box>
+                  <Form method="post">
+                    <input type="hidden" name="plan" value="premium" />
+                    <input type="hidden" name="cadence" value={cadence} />
+                    <Button
+                      submit
+                      variant="primary"
+                      fullWidth
+                      disabled={currentPlan === "premium"}
+                    >
+                      {currentPlan === "premium"
+                        ? "Current plan"
+                        : `Start ${trialDays}-day trial`}
+                    </Button>
+                  </Form>
+                </Box>
+              </BlockStack>
+            </Card>
+          ) : null}
+        </InlineGrid>
+      </BlockStack>
     </Page>
   );
 }

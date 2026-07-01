@@ -27,6 +27,10 @@ export default [
   // Webhooks
   route("webhooks/app/uninstalled", "routes/webhooks.app.uninstalled.ts"),
   route(
+    "webhooks/app_subscriptions/update",
+    "routes/webhooks.app_subscriptions.update.ts",
+  ),
+  route(
     "webhooks/customers/data_request",
     "routes/webhooks.customers.data_request.ts",
   ),

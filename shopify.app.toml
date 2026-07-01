@@ -28,6 +28,10 @@ topics = ["app/uninstalled"]
 uri = "/webhooks/app/uninstalled"
 
 [[webhooks.subscriptions]]
+topics = ["app_subscriptions/update"]
+uri = "/webhooks/app_subscriptions/update"
+
+[[webhooks.subscriptions]]
 topics = ["customers/data_request"]
 uri = "/webhooks/customers/data_request"
 
