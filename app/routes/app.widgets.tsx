@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useActionData,
   useLoaderData,
+  useSearchParams,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "react-router";
@@ -14,6 +15,7 @@ import {
   Page,
   Text,
 } from "@shopify/polaris";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { requireAdmin } from "../lib/auth/admin.server";
 import {
   deleteWidget as deleteWidgetRow,
@@ -60,6 +62,19 @@ export default function Widgets() {
   const { widgets, plan } = useLoaderData<typeof loader>();
   const data = useActionData<typeof action>();
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const shopify = useAppBridge();
+
+  // After the editor redirects back with ?saved=<created|updated>, surface a
+  // success toast (App Bridge) and clear the param so a refresh won't repeat it.
+  const saved = params.get("saved");
+  useEffect(() => {
+    if (!saved) return;
+    shopify.toast?.show(saved === "created" ? "Widget created" : "Widget saved");
+    const next = new URLSearchParams(params);
+    next.delete("saved");
+    setParams(next, { replace: true });
+  }, [saved, params, setParams, shopify]);
 
   return (
     <Page
