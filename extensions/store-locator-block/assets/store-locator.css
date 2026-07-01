@@ -1,87 +1,541 @@
+/* Simple Store Locator — storefront widget styles.
+ * Shared by all five views. Tasteful + adaptive: inherits theme font/colour by
+ * default, exposes configurable accents via CSS custom properties. */
+
 .simple-store-locator {
-  --ssl-border: #e3e3e3;
-  --ssl-accent: #008060;
-  --ssl-radius: 10px;
-  font-family: inherit;
-  color: inherit;
+  /* ---- design tokens (overridable from widget config.theme via core.js) --- */
+  --ssl-accent: #2c6ecb;
+  --ssl-marker: var(--ssl-accent);
+  --ssl-bg: #ffffff;
+  --ssl-text: inherit;
+  --ssl-muted: #6b7280;
+  --ssl-border: #e5e7eb;
+  --ssl-radius: 12px;
+  --ssl-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --ssl-shadow-lift: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --ssl-open: #16a34a;
+  --ssl-closed: #9ca3af;
+  --ssl-soon: #d97706;
+  --ssl-height: 540px;
+  --ssl-font: inherit;
+
+  font-family: var(--ssl-font);
+  color: var(--ssl-text);
   container-type: inline-size;
+  box-sizing: border-box;
+  line-height: 1.4;
 }
 
-.simple-store-locator__shell {
+.simple-store-locator *,
+.simple-store-locator *::before,
+.simple-store-locator *::after {
+  box-sizing: border-box;
+}
+
+/* ---- layout ------------------------------------------------------------- */
+.ssl {
+  display: block;
+}
+
+.ssl-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 340px) 1fr;
+  grid-template-columns: minmax(280px, 360px) 1fr;
   gap: 16px;
+  align-items: stretch;
+  height: var(--ssl-height);
 }
 
-@container (max-width: 720px) {
-  .simple-store-locator__shell {
-    grid-template-columns: 1fr;
-  }
+.ssl-grid[data-sidebar="right"] {
+  grid-template-columns: 1fr minmax(280px, 360px);
 }
 
-.simple-store-locator__sidebar {
+.ssl-sidebar {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 0;
+  height: 100%;
 }
 
-.simple-store-locator__search {
-  display: flex;
-  gap: 8px;
-}
-
-.simple-store-locator__search input {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid var(--ssl-border);
-  border-radius: var(--ssl-radius);
-  font: inherit;
-}
-
-.simple-store-locator__search button {
-  padding: 10px 16px;
-  border: 0;
-  border-radius: var(--ssl-radius);
-  background: var(--ssl-accent);
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
-.simple-store-locator__results {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 480px;
-  overflow: auto;
-  border: 1px solid var(--ssl-border);
-  border-radius: var(--ssl-radius);
-}
-
-.simple-store-locator__results li {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--ssl-border);
-  cursor: pointer;
-}
-
-.simple-store-locator__results li:last-child {
-  border-bottom: 0;
-}
-
-.simple-store-locator__results li h4 {
-  margin: 0 0 4px;
-  font-size: 14px;
-}
-
-.simple-store-locator__results li p {
-  margin: 0;
-  font-size: 13px;
-  color: #666;
-}
-
-.simple-store-locator__map {
+.ssl-map {
   border: 1px solid var(--ssl-border);
   border-radius: var(--ssl-radius);
   overflow: hidden;
+  min-height: 300px;
+  height: 100%;
+  background: #f3f4f6;
+}
+
+/* ---- search ------------------------------------------------------------- */
+.ssl-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ssl-search__icon {
+  position: absolute;
+  left: 12px;
+  display: inline-flex;
+  color: var(--ssl-muted);
+  pointer-events: none;
+}
+
+.ssl-search__input {
+  width: 100%;
+  padding: 11px 40px 11px 38px;
+  border: 1px solid var(--ssl-border);
+  border-radius: var(--ssl-radius);
+  background: var(--ssl-bg);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+.ssl-search__input:focus-visible {
+  outline: 2px solid var(--ssl-accent);
+  outline-offset: 1px;
+  border-color: var(--ssl-accent);
+}
+
+.ssl-search__clear {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ssl-muted);
+  cursor: pointer;
+}
+
+.ssl-search__clear:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: inherit;
+}
+
+.ssl-search--busy .ssl-search__icon {
+  animation: ssl-spin 0.8s linear infinite;
+}
+
+/* ---- near-me ------------------------------------------------------------ */
+.ssl-nearme {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 8px 12px;
+  border: 1px solid var(--ssl-border);
+  border-radius: 999px;
+  background: var(--ssl-bg);
+  color: var(--ssl-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ssl-nearme:hover {
+  border-color: var(--ssl-accent);
+  background: color-mix(in srgb, var(--ssl-accent) 6%, transparent);
+}
+
+.ssl-nearme:focus-visible {
+  outline: 2px solid var(--ssl-accent);
+  outline-offset: 2px;
+}
+
+.ssl-nearme--busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ---- filter chips ------------------------------------------------------- */
+.ssl-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ssl-filters[hidden] {
+  display: none;
+}
+
+.ssl-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.ssl-chip--filter {
+  border: 1px solid var(--ssl-border);
+  background: var(--ssl-bg);
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ssl-chip--filter:hover {
+  border-color: var(--ssl-accent);
+}
+
+.ssl-chip--filter:focus-visible {
+  outline: 2px solid var(--ssl-accent);
+  outline-offset: 1px;
+}
+
+.ssl-chip--on {
+  background: var(--ssl-accent);
+  border-color: var(--ssl-accent);
+  color: #fff;
+}
+
+.ssl-chip--distance {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ssl-muted);
+}
+
+/* ---- results list ------------------------------------------------------- */
+.ssl-results__count {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ssl-muted);
+}
+
+.ssl-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+}
+
+/* ---- store card --------------------------------------------------------- */
+.ssl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--ssl-border);
+  border-left: 3px solid transparent;
+  border-radius: var(--ssl-radius);
+  background: var(--ssl-bg);
+  box-shadow: var(--ssl-shadow);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.ssl-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ssl-shadow-lift);
+}
+
+.ssl-card:focus-visible {
+  outline: 2px solid var(--ssl-accent);
+  outline-offset: 2px;
+}
+
+.ssl-card--active {
+  border-left-color: var(--ssl-accent);
+  box-shadow: 0 0 0 1px var(--ssl-accent), var(--ssl-shadow-lift);
+}
+
+.ssl-card__name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ssl-card__addr {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ssl-muted);
+}
+
+.ssl-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ssl-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* ---- open-now pill ------------------------------------------------------ */
+.ssl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ssl-pill__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.ssl-pill--open {
+  color: var(--ssl-open);
+}
+
+.ssl-pill--closed {
+  color: var(--ssl-closed);
+}
+
+.ssl-pill--soon {
+  color: var(--ssl-soon);
+}
+
+/* ---- buttons ------------------------------------------------------------ */
+.ssl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ssl-btn--primary {
+  background: var(--ssl-accent);
+  color: #fff;
+}
+
+.ssl-btn--primary:hover {
+  background: color-mix(in srgb, var(--ssl-accent) 88%, #000);
+}
+
+.ssl-btn--ghost {
+  background: transparent;
+  border-color: var(--ssl-border);
+  color: inherit;
+}
+
+.ssl-btn--ghost:hover {
+  border-color: var(--ssl-accent);
+  color: var(--ssl-accent);
+}
+
+.ssl-btn:focus-visible {
+  outline: 2px solid var(--ssl-accent);
+  outline-offset: 2px;
+}
+
+/* ---- states ------------------------------------------------------------- */
+.ssl-empty,
+.ssl-state {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--ssl-muted);
+  font-size: 14px;
+}
+
+.ssl-state__title {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: inherit;
+}
+
+.ssl-state__body {
+  margin: 0;
+}
+
+.ssl--error {
+  border: 1px solid var(--ssl-border);
+  border-radius: var(--ssl-radius);
+  background: var(--ssl-bg);
+}
+
+/* ---- loading skeletons -------------------------------------------------- */
+.ssl--loading {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 16px;
+  height: var(--ssl-height);
+}
+
+.ssl--loading .ssl-sidebar {
+  gap: 10px;
+}
+
+.ssl-skeleton-card {
+  height: 92px;
+  border-radius: var(--ssl-radius);
+  background: linear-gradient(
+    100deg,
+    rgba(0, 0, 0, 0.04) 30%,
+    rgba(0, 0, 0, 0.08) 50%,
+    rgba(0, 0, 0, 0.04) 70%
+  );
+  background-size: 200% 100%;
+  animation: ssl-shimmer 1.3s ease-in-out infinite;
+}
+
+.ssl-map--loading {
+  border: 1px solid var(--ssl-border);
+  border-radius: var(--ssl-radius);
+  background: linear-gradient(
+    100deg,
+    rgba(0, 0, 0, 0.03) 30%,
+    rgba(0, 0, 0, 0.06) 50%,
+    rgba(0, 0, 0, 0.03) 70%
+  );
+  background-size: 200% 100%;
+  animation: ssl-shimmer 1.3s ease-in-out infinite;
+}
+
+/* ---- mobile list/map toggle -------------------------------------------- */
+.ssl-toggle {
+  display: none;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border: 1px solid var(--ssl-border);
+  border-radius: 999px;
+  background: var(--ssl-bg);
+}
+
+.ssl-toggle__btn {
+  flex: 1;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ssl-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ssl-toggle__btn--active {
+  background: var(--ssl-accent);
+  color: #fff;
+}
+
+.ssl-toggle__btn:focus-visible {
+  outline: 2px solid var(--ssl-accent);
+  outline-offset: 2px;
+}
+
+/* ---- powered by --------------------------------------------------------- */
+.ssl-powered {
+  margin-top: 8px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--ssl-muted);
+}
+
+.ssl-powered a {
+  color: var(--ssl-muted);
+  text-decoration: none;
+}
+
+.ssl-powered a:hover {
+  text-decoration: underline;
+}
+
+/* ---- leaflet pin tweaks ------------------------------------------------- */
+.ssl-leaflet-pin {
+  background: transparent;
+  border: 0;
+}
+
+.ssl-leaflet-pin--active {
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
+  transform: scale(1.15);
+  transform-origin: bottom center;
+}
+
+/* ---- animations --------------------------------------------------------- */
+@keyframes ssl-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes ssl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- responsive (container queries) ------------------------------------ */
+@container (max-width: 720px) {
+  .ssl-grid,
+  .ssl--loading {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .ssl-toggle {
+    display: flex;
+  }
+
+  .ssl-grid .ssl-sidebar {
+    height: auto;
+  }
+
+  .ssl-grid .ssl-results {
+    max-height: 60vh;
+  }
+
+  /* Default (no data-mode) shows the list; map is toggled in. */
+  .ssl-grid:not([data-mode="map"]) .ssl-map {
+    display: none;
+  }
+
+  .ssl-grid[data-mode="map"] .ssl-sidebar {
+    display: none;
+  }
+
+  .ssl-grid .ssl-map {
+    height: var(--ssl-height);
+  }
+}
+
+/* ---- reduced motion ----------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .simple-store-locator *,
+  .simple-store-locator *::before,
+  .simple-store-locator *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .ssl-card:hover {
+    transform: none;
+  }
+
+  .ssl-leaflet-pin--active {
+    transform: none;
+  }
 }

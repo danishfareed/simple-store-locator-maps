@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "shopify app dev",
     "dev:rr": "react-router dev",
-    "build": "react-router build && node ./scripts/build-worker.mjs",
+    "build": "react-router build && node ./scripts/build-worker.mjs && node ./scripts/build-extension.mjs",
     "start": "wrangler dev",
     "deploy": "npm run build && wrangler deploy",
     "typecheck": "react-router typegen && tsc --noEmit",
