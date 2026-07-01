@@ -1,205 +1,124 @@
+import { useState } from "react";
 import {
-  Form,
   useActionData,
   useLoaderData,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "react-router";
-import { useState } from "react";
 import {
   Banner,
   BlockStack,
   Card,
-  Checkbox,
-  FormLayout,
+  EmptyState,
+  Modal,
   Page,
-  Select,
-  TextField,
-  Button,
+  Text,
 } from "@shopify/polaris";
 import { requireAdmin } from "../lib/auth/admin.server";
-import { listWidgets } from "../repositories/widget.repository.server";
-import { WidgetInputSchema, type WidgetType } from "../schemas/widget.schema";
-import { assertWidgetTypeAllowed, saveWidget } from "../services/widget.service.server";
+import {
+  deleteWidget as deleteWidgetRow,
+  listWidgets,
+} from "../repositories/widget.repository.server";
+import { duplicateWidget } from "../services/widget.service.server";
 import { getActivePlanHandle } from "../services/billing.service.server";
-import { PlanFeatureError } from "../services/quota.service.server";
-import { PROVIDERS } from "../features/providers/providers";
+import { WidgetsTable } from "../features/widgets/WidgetsTable";
+import { WidgetTypeGallery } from "../features/widgets/WidgetTypeGallery";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const { db, shop } = await requireAdmin(request, context);
-  const widgets = await listWidgets(db, shop.id);
-  const widget = widgets[0] ?? null;
-  return { widget };
+  const [widgets, plan] = await Promise.all([
+    listWidgets(db, shop.id),
+    getActivePlanHandle(db, shop.id),
+  ]);
+  return { widgets, plan };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const { db, shop } = await requireAdmin(request, context);
   const form = await request.formData();
+  const intent = String(form.get("intent") ?? "");
+  const id = String(form.get("id") ?? "");
 
-  const type = (String(form.get("type") ?? "map_list") as WidgetType);
-  const payload = {
-    handle: String(form.get("handle") ?? "default"),
-    name: String(form.get("name") ?? "Default widget"),
-    provider: (form.get("provider") ?? "leaflet") as "leaflet" | "google",
-    type,
-    isPublished: form.get("isPublished") === "on",
-    config: {
-      type,
-      defaultCenter:
-        form.get("lat") && form.get("lng")
-          ? { lat: Number(form.get("lat")), lng: Number(form.get("lng")) }
-          : undefined,
-      defaultZoom: form.get("zoom") ? Number(form.get("zoom")) : undefined,
-      searchRadiusKm: form.get("radius") ? Number(form.get("radius")) : undefined,
-      showHours: form.get("showHours") === "on",
-      showPhone: form.get("showPhone") === "on",
-      showDirections: form.get("showDirections") === "on",
-    },
-  };
-
-  const parsed = WidgetInputSchema.safeParse(payload);
-  if (!parsed.success) {
-    return { ok: false as const, errors: parsed.error.flatten().fieldErrors };
+  if (!id) {
+    return { ok: false as const, error: "Missing widget id" };
   }
 
-  // Server-side plan gating: free is limited to map_list. Never trust the
-  // client's widget-type selection.
-  const planHandle = await getActivePlanHandle(db, shop.id);
-  try {
-    assertWidgetTypeAllowed(planHandle, parsed.data.type);
-  } catch (err) {
-    if (err instanceof PlanFeatureError) {
-      return { ok: false as const, error: err.message };
-    }
-    throw err;
+  if (intent === "duplicate") {
+    await duplicateWidget(db, shop.id, id);
+    return { ok: true as const, toast: "Widget duplicated" };
   }
 
-  const id = form.get("id") ? String(form.get("id")) : undefined;
-  await saveWidget(db, shop.id, parsed.data, id);
-  return { ok: true as const };
+  if (intent === "delete") {
+    await deleteWidgetRow(db, shop.id, id);
+    return { ok: true as const, toast: "Widget deleted" };
+  }
+
+  return { ok: false as const, error: "Unknown action" };
 }
 
 export default function Widgets() {
-  const { widget } = useLoaderData<typeof loader>();
+  const { widgets, plan } = useLoaderData<typeof loader>();
   const data = useActionData<typeof action>();
-
-  const [handle, setHandle] = useState(widget?.handle ?? "default");
-  const [name, setName] = useState(widget?.name ?? "Default widget");
-  const [provider, setProvider] = useState(widget?.provider ?? "leaflet");
-  const [lat, setLat] = useState(String(widget?.config?.defaultCenter?.lat ?? ""));
-  const [lng, setLng] = useState(String(widget?.config?.defaultCenter?.lng ?? ""));
-  const [zoom, setZoom] = useState(String(widget?.config?.defaultZoom ?? 10));
-  const [radius, setRadius] = useState(String(widget?.config?.searchRadiusKm ?? 25));
-  const [showHours, setShowHours] = useState(widget?.config?.showHours ?? true);
-  const [showPhone, setShowPhone] = useState(widget?.config?.showPhone ?? true);
-  const [showDirections, setShowDirections] = useState(
-    widget?.config?.showDirections ?? true,
-  );
-  const [isPublished, setIsPublished] = useState(widget?.isPublished ?? false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   return (
-    <Page title="Widget">
+    <Page
+      title="Widgets"
+      subtitle="Store locator blocks you can add to your theme."
+      primaryAction={{
+        content: "Create widget",
+        onAction: () => setGalleryOpen(true),
+      }}
+    >
       <BlockStack gap="400">
-        {data?.ok ? <Banner tone="success" title="Widget saved" /> : null}
-        <Card>
-          <Form method="post">
-            <FormLayout>
-              {widget ? <input type="hidden" name="id" value={widget.id} /> : null}
-              <FormLayout.Group>
-                <TextField
-                  label="Handle"
-                  name="handle"
-                  value={handle}
-                  onChange={setHandle}
-                  autoComplete="off"
-                />
-                <TextField
-                  label="Name"
-                  name="name"
-                  value={name}
-                  onChange={setName}
-                  autoComplete="off"
-                />
-              </FormLayout.Group>
-              <Select
-                label="Map provider"
-                name="provider"
-                value={provider}
-                onChange={(v) => setProvider(v as "leaflet" | "google")}
-                options={Object.values(PROVIDERS).map((p) => ({
-                  value: p.id,
-                  label: p.displayName,
-                }))}
-              />
-              <FormLayout.Group>
-                <TextField
-                  label="Default latitude"
-                  name="lat"
-                  type="number"
-                  step={0.001}
-                  value={lat}
-                  onChange={setLat}
-                  autoComplete="off"
-                />
-                <TextField
-                  label="Default longitude"
-                  name="lng"
-                  type="number"
-                  step={0.001}
-                  value={lng}
-                  onChange={setLng}
-                  autoComplete="off"
-                />
-              </FormLayout.Group>
-              <FormLayout.Group>
-                <TextField
-                  label="Default zoom"
-                  name="zoom"
-                  type="number"
-                  value={zoom}
-                  onChange={setZoom}
-                  autoComplete="off"
-                />
-                <TextField
-                  label="Search radius (km)"
-                  name="radius"
-                  type="number"
-                  value={radius}
-                  onChange={setRadius}
-                  autoComplete="off"
-                />
-              </FormLayout.Group>
-              <Checkbox
-                label="Show hours"
-                name="showHours"
-                checked={showHours}
-                onChange={setShowHours}
-              />
-              <Checkbox
-                label="Show phone"
-                name="showPhone"
-                checked={showPhone}
-                onChange={setShowPhone}
-              />
-              <Checkbox
-                label="Show directions link"
-                name="showDirections"
-                checked={showDirections}
-                onChange={setShowDirections}
-              />
-              <Checkbox
-                label="Published"
-                name="isPublished"
-                checked={isPublished}
-                onChange={setIsPublished}
-              />
-              <Button submit variant="primary">
-                Save widget
-              </Button>
-            </FormLayout>
-          </Form>
-        </Card>
+        {data?.ok && data.toast ? (
+          <Banner tone="success" title={data.toast} />
+        ) : null}
+        {data && !data.ok && data.error ? (
+          <Banner tone="critical" title={data.error} />
+        ) : null}
+
+        {widgets.length === 0 ? (
+          <Card>
+            <EmptyState
+              heading="Create your first widget"
+              action={{
+                content: "Create widget",
+                onAction: () => setGalleryOpen(true),
+              }}
+              secondaryAction={{ content: "Manage plan", url: "/app/billing" }}
+              image="https://cdn.shopify.com/s/files/1/0757/9955/files/empty-state.svg"
+            >
+              <p>
+                Widgets are the store-locator blocks your customers see. Pick a
+                type, configure it, then add the Store Locator block to your
+                theme.
+              </p>
+            </EmptyState>
+          </Card>
+        ) : (
+          <Card padding="0">
+            <WidgetsTable widgets={widgets} />
+          </Card>
+        )}
       </BlockStack>
+
+      <Modal
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        title="Choose a widget type"
+        size="large"
+      >
+        <Modal.Section>
+          <BlockStack gap="300">
+            <Text as="p" tone="subdued">
+              Every widget shares the same locations. Pick the layout that fits
+              where you want to place it.
+            </Text>
+            <WidgetTypeGallery plan={plan} />
+          </BlockStack>
+        </Modal.Section>
+      </Modal>
     </Page>
   );
 }

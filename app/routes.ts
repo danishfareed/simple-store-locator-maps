@@ -9,6 +9,8 @@ export default [
     route("locations/:id", "routes/app.locations.$id.tsx"),
     route("imports", "routes/app.imports.tsx"),
     route("widgets", "routes/app.widgets.tsx"),
+    route("widgets/new", "routes/app.widgets.new.tsx"),
+    route("widgets/:id", "routes/app.widgets.$id.tsx"),
     route("analytics", "routes/app.analytics.tsx"),
     route("settings", "routes/app.settings.tsx"),
     route("billing", "routes/app.billing.tsx"),
