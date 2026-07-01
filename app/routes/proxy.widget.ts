@@ -4,6 +4,7 @@ import { requireStorefront } from "../lib/auth/storefront.server";
 import { widgets } from "../lib/db/schema";
 import { resolveProvider } from "../services/provider.service.server";
 import { incrementStorefrontRequest } from "../services/quota.service.server";
+import { planShowsPoweredBy } from "../lib/billing/plans";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const gate = await requireStorefront(request, context);
@@ -29,17 +30,26 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     planHandle: gate.shop.planHandle,
   });
 
+  const googleMapsApiKey =
+    provider.id === "google" && gate.shop.settings?.googleMapsApiKey
+      ? gate.shop.settings.googleMapsApiKey
+      : undefined;
+
   return Response.json(
     {
       widget: {
         handle: widget.handle,
         name: widget.name,
+        type: widget.type,
         provider: provider.id,
         providerMeta: {
           tileUrl: provider.tileUrl,
           attribution: provider.attribution,
         },
         config: widget.config,
+        timezone: gate.shop.timezone ?? null,
+        showPoweredBy: planShowsPoweredBy(gate.shop.planHandle),
+        googleMapsApiKey,
       },
     },
     {

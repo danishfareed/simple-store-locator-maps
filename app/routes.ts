@@ -23,6 +23,7 @@ export default [
   route("proxy/locations", "routes/proxy.locations.ts"),
   route("proxy/search", "routes/proxy.search.ts"),
   route("proxy/widget", "routes/proxy.widget.ts"),
+  route("proxy/event", "routes/proxy.event.ts"),
 
   // Webhooks
   route("webhooks/app/uninstalled", "routes/webhooks.app.uninstalled.ts"),
