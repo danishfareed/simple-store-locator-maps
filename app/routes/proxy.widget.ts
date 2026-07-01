@@ -24,7 +24,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   }
 
   const hasApiKey = Boolean(gate.shop.settings?.googleMapsApiKey);
-  const provider = resolveProvider(widget.provider, { hasApiKey });
+  const provider = resolveProvider(widget.provider, {
+    hasApiKey,
+    planHandle: gate.shop.planHandle,
+  });
 
   return Response.json(
     {

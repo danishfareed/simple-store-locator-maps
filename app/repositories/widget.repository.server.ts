@@ -23,6 +23,7 @@ export async function upsertWidget(db: Database, row: NewWidget): Promise<Widget
       set: {
         name: row.name,
         provider: row.provider,
+        type: row.type,
         config: row.config,
         isPublished: row.isPublished,
         updatedAt: new Date(),

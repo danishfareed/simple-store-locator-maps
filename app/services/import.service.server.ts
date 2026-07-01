@@ -12,7 +12,8 @@ import {
   createImport,
   updateImportStatus,
 } from "../repositories/import.repository.server";
-import { assertImportQuota } from "./quota.service.server";
+import { assertImportQuota, getPlanForShop, PlanFeatureError } from "./quota.service.server";
+import { planAllowsImportKind } from "../lib/billing/plans";
 import {
   IMPORT_COLUMN_ALIASES,
   ImportRowSchema,
@@ -25,6 +26,19 @@ import type {
 } from "../../workers/app";
 
 const MAX_BATCH = 100;
+
+/**
+ * Server-side gate: throw unless `planHandle` may run an import of `kind`. Free
+ * is CSV-only; premium adds XLSX. Enforced in `enqueueImport` below.
+ */
+export function assertImportKindAllowed(
+  planHandle: string,
+  kind: "csv" | "xlsx",
+): void {
+  if (!planAllowsImportKind(planHandle, kind)) {
+    throw new PlanFeatureError(`${kind.toUpperCase()} import`, planHandle);
+  }
+}
 
 /** Kick off an import: persist row, stream file to R2, enqueue the worker job. */
 export async function enqueueImport(
@@ -39,10 +53,14 @@ export async function enqueueImport(
   });
 
   const db = getDb(env.DB);
+
+  const kind: "csv" | "xlsx" = file.name.toLowerCase().endsWith(".xlsx") ? "xlsx" : "csv";
+  const plan = await getPlanForShop(db, shopId);
+  assertImportKindAllowed(plan.handle, kind);
+
   await assertImportQuota(db, shopId);
 
   const importId = newId();
-  const kind: "csv" | "xlsx" = file.name.toLowerCase().endsWith(".xlsx") ? "xlsx" : "csv";
   const r2Key = `imports/${shopId}/${importId}/${sanitize(file.name)}`;
 
   await env.UPLOADS.put(r2Key, file.stream, {

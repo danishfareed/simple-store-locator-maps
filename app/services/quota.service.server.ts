@@ -4,21 +4,13 @@ import { quotaUsage, shops, type Plan } from "../lib/db/schema";
 import { countLocations } from "../repositories/location.repository.server";
 import { countImportsThisMonth } from "../repositories/import.repository.server";
 import { getPlan } from "../repositories/subscription.repository.server";
+import { PLAN_FREE } from "../lib/billing/plans";
 
-const DEFAULT_FREE_PLAN: Plan = {
-  handle: "free",
-  name: "Free",
-  priceCents: 0,
-  currency: "USD",
-  interval: "every_30_days",
-  trialDays: 0,
-  maxLocations: 5,
-  maxImportsPerMonth: 1,
-  maxStorefrontRequestsPerDay: 5000,
-  features: ["leaflet", "csv_import", "basic_analytics"],
-  sortOrder: 1,
-  isActive: true,
-};
+// Fallback used only when the DB has no matching plan row (e.g. tests that skip
+// seeding, or a shop pointing at a since-deactivated legacy tier). Mirrors the
+// canonical free-plan constant (3 locations, OSM/CSV) so gating stays correct
+// even off the DB path.
+const DEFAULT_FREE_PLAN: Plan = PLAN_FREE;
 
 export async function getPlanForShop(db: Database, shopId: string): Promise<Plan> {
   const shop = await db.select().from(shops).where(eq(shops.id, shopId)).get();
@@ -36,6 +28,22 @@ export class QuotaExceededError extends Error {
   ) {
     super(`Quota exceeded: ${kind} (${current}/${cap} on plan "${plan}")`);
     this.name = "QuotaExceededError";
+  }
+}
+
+/**
+ * Thrown when a shop's plan doesn't include a requested feature (a premium
+ * widget type, XLSX import, Google Maps, …). Mirrors QuotaExceededError so
+ * routes can catch both and surface a "upgrade to unlock" message. Feature
+ * gating is SERVER-SIDE — never trusted to the client.
+ */
+export class PlanFeatureError extends Error {
+  constructor(
+    public readonly feature: string,
+    public readonly plan: string,
+  ) {
+    super(`Feature not available on plan "${plan}": ${feature}`);
+    this.name = "PlanFeatureError";
   }
 }
 

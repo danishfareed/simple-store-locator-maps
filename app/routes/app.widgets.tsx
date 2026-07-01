@@ -19,8 +19,10 @@ import {
 } from "@shopify/polaris";
 import { requireAdmin } from "../lib/auth/admin.server";
 import { listWidgets } from "../repositories/widget.repository.server";
-import { WidgetInputSchema } from "../schemas/widget.schema";
-import { saveWidget } from "../services/widget.service.server";
+import { WidgetInputSchema, type WidgetType } from "../schemas/widget.schema";
+import { assertWidgetTypeAllowed, saveWidget } from "../services/widget.service.server";
+import { getActivePlanHandle } from "../services/billing.service.server";
+import { PlanFeatureError } from "../services/quota.service.server";
 import { PROVIDERS } from "../features/providers/providers";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -34,12 +36,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const { db, shop } = await requireAdmin(request, context);
   const form = await request.formData();
 
+  const type = (String(form.get("type") ?? "map_list") as WidgetType);
   const payload = {
     handle: String(form.get("handle") ?? "default"),
     name: String(form.get("name") ?? "Default widget"),
     provider: (form.get("provider") ?? "leaflet") as "leaflet" | "google",
+    type,
     isPublished: form.get("isPublished") === "on",
     config: {
+      type,
       defaultCenter:
         form.get("lat") && form.get("lng")
           ? { lat: Number(form.get("lat")), lng: Number(form.get("lng")) }
@@ -56,6 +61,19 @@ export async function action({ request, context }: ActionFunctionArgs) {
   if (!parsed.success) {
     return { ok: false as const, errors: parsed.error.flatten().fieldErrors };
   }
+
+  // Server-side plan gating: free is limited to map_list. Never trust the
+  // client's widget-type selection.
+  const planHandle = await getActivePlanHandle(db, shop.id);
+  try {
+    assertWidgetTypeAllowed(planHandle, parsed.data.type);
+  } catch (err) {
+    if (err instanceof PlanFeatureError) {
+      return { ok: false as const, error: err.message };
+    }
+    throw err;
+  }
+
   const id = form.get("id") ? String(form.get("id")) : undefined;
   await saveWidget(db, shop.id, parsed.data, id);
   return { ok: true as const };
