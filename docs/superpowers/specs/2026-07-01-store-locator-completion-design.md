@@ -209,13 +209,38 @@ Replace the 4-tier seed with **2 plans** (`0003_reprice_plans.sql`, deactivate o
 
 ---
 
+## 10A. UI/UX & widget manageability (quality bar)
+
+The admin must feel native to Shopify and give merchants **full, easy control** over every widget.
+
+### 10A.1 Admin experience (Polaris + App Bridge)
+- Native Polaris throughout: consistent `Page`/`Card`/`Layout`, loading skeletons, save bars, toasts, error banners, empty states, and contextual help text on every field.
+- **Home dashboard** = onboarding checklist (1 Add locations → 2 Create a widget → 3 Add the block to your theme → 4 Go live) with live progress, plus quick stats (locations, views, searches) and a "View plan" nudge.
+- **Locations**: searchable/filterable/sortable table, bulk actions (activate/deactivate/delete), CSV/XLSX import entry point; edit form with a **map picker** (click to set lat/lng) + one-click **geocode from address**, hours editor (per-day open/close, closed toggle), services/category tags, image URL.
+
+### 10A.2 Widget editor — full options, easy to manage
+- **Widget list**: cards/table showing name, **type badge**, provider, published status, theme handle (copy-to-clipboard); "Create widget" opens a **type gallery** (each of the 5 types with a thumbnail + one-line description; locked types show an upgrade nudge on Free).
+- **Create/Edit** screen with a **two-pane layout**: left = grouped settings, right = **live preview** that renders the real storefront widget (sandboxed iframe loading the same bundle against sample/live data) and updates as settings change.
+- **Every setting editable** with the right control: provider select (OSM/Google) + Google key link; map default center via interactive map picker + zoom slider; search radius; **color pickers** (primary, marker, background/text) and font selector (theme fonts + web-safe); toggles for hours / phone / directions / near-me / clustering / filters; category facet manager; and **type-specific** controls (Map+List: sidebar side, results per page; Finder: hero height, filter bar; Carousel: cards per view, autoplay, mini-map; List/Grid: columns, map link; Single: store picker).
+- Sensible defaults so a widget works with zero config; **"how to add to your theme" guide** with the exact handle and deep link to the theme editor; duplicate-widget and preview-on-storefront actions.
+- Plan gating is friendly: locked controls are visible but disabled with an inline "Upgrade to Premium" explanation (never a dead end).
+
+### 10A.3 Storefront widget aesthetics
+- Clean, modern, responsive designs that inherit theme fonts/colors by default and respect the merchant's chosen palette; smooth interactions (hover/active states, focus rings), skeleton/loading states, graceful empties and errors; fully keyboard-accessible and screen-reader labeled.
+- Distinctive but not templated — use the frontend-design skill for aesthetic direction on both admin custom surfaces and the 5 storefront views.
+
+**Acceptance:** a non-technical merchant can create, fully customize (via live preview), publish, and embed any widget type without documentation; every config field has a visible control and inline help; admin passes an accessibility pass.
+
+---
+
 ## 10. High-level build order
 
 1. Version + scope bump; verify build/typecheck/tests green (Section A).
 2. GDPR webhooks + settings completion (Section E) — unblock App Store early.
-3. Widget `type` schema + config union + admin list/create/edit + plan gating (Section B admin side).
+3. Widget `type` schema + config union + admin **type gallery + two-pane editor with live preview + full controls** + plan gating (Section B admin side, §10A.2).
 4. Storefront refactor (client-side): provider interface (Leaflet + Google) + 5 views + client geocoding + near-me/filters/clustering/open-now + analytics beacon; edge-cached `locations.json`/`widget.json` feeds (Sections B storefront + C).
 5. Pricing: 2-plan reseed + billing activation fix + fencing (Section D).
 6. Theme extension updates (block settings, single-store block).
-7. Tests for all new surfaces; deploy runbook; publishing checklist (Section F).
-8. End-to-end verification on a dev store; final review.
+7. Home dashboard/onboarding checklist + locations map-picker/geocode + settings completion + admin UI polish pass (§10A).
+8. Tests for all new surfaces; deploy runbook; publishing checklist (Section F).
+9. End-to-end verification on a dev store; final review.
