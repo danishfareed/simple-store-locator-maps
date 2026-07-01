@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const WidgetTypeEnum = z.enum(["map_list", "finder", "carousel", "list", "single"]);
+export type WidgetType = z.infer<typeof WidgetTypeEnum>;
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
