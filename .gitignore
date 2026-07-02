@@ -24,3 +24,5 @@ yarn-error.log*
 # Shopify
 .shopify/
 extensions/**/build
+.dev.vars
+.dev.vars.*

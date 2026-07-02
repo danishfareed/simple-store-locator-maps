@@ -17,7 +17,7 @@ APP_ENV = "production"
 [[d1_databases]]
 binding = "DB"
 database_name = "simple-store-locator"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "dfdeb183-a86a-4f53-9974-551bb3276c51"
 migrations_dir = "./drizzle/migrations"
 
 [[r2_buckets]]
