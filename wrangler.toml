@@ -6,9 +6,14 @@ compatibility_flags = ["nodejs_compat"]
 
 assets = { directory = "./build/client", binding = "ASSETS" }
 
+# Buyer-facing custom domain (Cloudflare provisions the DNS record + TLS cert).
+routes = [
+  { pattern = "locator.vdesignu.com", custom_domain = true },
+]
+
 [vars]
 # Public/non-secret vars only. Secrets → `wrangler secret put`.
-SHOPIFY_APP_URL = "https://simple-store-locator.fareedanish1.workers.dev"
+SHOPIFY_APP_URL = "https://locator.vdesignu.com"
 SCOPES = ""
 SHOPIFY_API_VERSION = "2026-04"
 # Live stores get real charges; Shopify dev stores force test charges regardless.

@@ -2,7 +2,7 @@
 # `shopify app config use`. Values below are defaults overwritten on link.
 name = "simple-store-locator"
 handle = "simple-store-locator"
-application_url = "https://simple-store-locator.fareedanish1.workers.dev"
+application_url = "https://locator.vdesignu.com"
 embedded = true
 
 [build]
@@ -15,9 +15,9 @@ scopes = ""
 
 [auth]
 redirect_urls = [
-  "https://simple-store-locator.fareedanish1.workers.dev/auth/callback",
-  "https://simple-store-locator.fareedanish1.workers.dev/auth/shopify/callback",
-  "https://simple-store-locator.fareedanish1.workers.dev/api/auth/callback",
+  "https://locator.vdesignu.com/auth/callback",
+  "https://locator.vdesignu.com/auth/shopify/callback",
+  "https://locator.vdesignu.com/api/auth/callback",
 ]
 
 [webhooks]
@@ -44,7 +44,7 @@ topics = ["shop/redact"]
 uri = "/webhooks/shop/redact"
 
 [app_proxy]
-url = "https://simple-store-locator.fareedanish1.workers.dev/proxy"
+url = "https://locator.vdesignu.com/proxy"
 subpath = "store-locator"
 prefix = "apps"
 
