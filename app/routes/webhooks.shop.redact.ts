@@ -23,7 +23,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const db = getDb(env.DB);
   // Shopify sends this 48h after uninstall. The shop row may already be
   // marked uninstalled by the app/uninstalled webhook — purge regardless.
-  await purgeShopData(db, shop);
+  // Pass the UPLOADS R2 binding so purgeShopData also deletes the shop's
+  // raw uploaded CSV/XLSX files, not just the DB rows referencing them.
+  await purgeShopData(db, shop, env.UPLOADS);
 
   return new Response(null, { status: 200 });
 }

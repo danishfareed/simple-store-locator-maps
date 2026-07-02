@@ -27,9 +27,11 @@ vi.mock("../../app/lib/db/client.server", () => ({
   getDb: () => ({}),
 }));
 
+const fakeUploads = { list: vi.fn(), delete: vi.fn() };
+
 const fakeContext = {
   cloudflare: {
-    env: { DB: {} },
+    env: { DB: {}, UPLOADS: fakeUploads },
   },
 } as any;
 
@@ -127,7 +129,11 @@ describe("gdpr webhooks", () => {
       const res = await action({ request: makeRequest({}), context: fakeContext } as any);
 
       expect(res.status).toBe(200);
-      expect(purgeShopData).toHaveBeenCalledWith(expect.anything(), "demo.myshopify.com");
+      expect(purgeShopData).toHaveBeenCalledWith(
+        expect.anything(),
+        "demo.myshopify.com",
+        fakeUploads,
+      );
     });
 
     it("returns 401 when HMAC verification fails", async () => {
