@@ -1,7 +1,7 @@
 # Simple Store Locator — App Store Publishing Checklist
 
 **App:** Simple Store Locator — Shopify embedded app (React Router 7 + Cloudflare Workers/D1/R2/Queues) with a theme app extension storefront widget.
-**Deploy target:** `https://simple-store-locator.fareedanish1.workers.dev`
+**Deploy target:** `https://locator.vdesignu.com`
 **Status:** Code complete, CI-clean, compliance- and security-reviewed. Remaining items below require your Cloudflare/Shopify accounts and a dev store.
 
 ---
