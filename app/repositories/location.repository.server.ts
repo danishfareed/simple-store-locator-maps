@@ -11,6 +11,38 @@ export async function countLocations(db: Database, shopId: string): Promise<numb
   return row?.count ?? 0;
 }
 
+/**
+ * All existing slugs for a shop, lower-cased into a Set. Used by the importer to
+ * de-collide slugs up front (one query) instead of a per-row DB round-trip.
+ */
+export async function getShopSlugs(db: Database, shopId: string): Promise<Set<string>> {
+  const rows = await db
+    .select({ slug: locations.slug })
+    .from(locations)
+    .where(eq(locations.shopId, shopId))
+    .all();
+  return new Set(rows.map((r) => r.slug));
+}
+
+/**
+ * The set of `externalId`s already present for a shop (nulls excluded). Used by
+ * the importer to tell UPDATES (matching externalId → upsert) apart from
+ * NET-NEW rows when enforcing the plan's location cap.
+ */
+export async function getShopExternalIds(
+  db: Database,
+  shopId: string,
+): Promise<Set<string>> {
+  const rows = await db
+    .select({ externalId: locations.externalId })
+    .from(locations)
+    .where(eq(locations.shopId, shopId))
+    .all();
+  const set = new Set<string>();
+  for (const r of rows) if (r.externalId) set.add(r.externalId);
+  return set;
+}
+
 export interface ListLocationsOptions {
   query?: string;
   status?: "active" | "inactive" | "draft";
