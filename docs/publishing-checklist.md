@@ -60,8 +60,9 @@ A multi-dimension audit (auth/HMAC, storefront-XSS/exposure, billing/plan-enforc
 
 Follow the deploy runbook in [README.md](../README.md) for exact commands.
 
-- [ ] **Deploy to Cloudflare** — `wrangler login` (or `CLOUDFLARE_API_TOKEN`); create D1/R2/Queues; paste the D1 `database_id` into `wrangler.toml`; `wrangler secret put SHOPIFY_API_KEY SHOPIFY_API_SECRET SESSION_SECRET`; `npm run db:migrate:remote`; `npm run deploy`.
-- [ ] **Link + push the Shopify app** — `npm run shopify:config:link`; `npm run shopify:deploy` (uploads the theme extension + app config + all webhook subscriptions).
+- [x] **Deploy to Cloudflare** — DONE. D1/R2/Queues provisioned, migrations applied `--remote`, worker deployed, and bound to the custom domain **`https://locator.vdesignu.com`** (valid TLS). `SESSION_SECRET` set.
+- [ ] **Set the Shopify secrets** — `wrangler secret put SHOPIFY_API_KEY` and `wrangler secret put SHOPIFY_API_SECRET` (from your Partner Dashboard app). Until these are set the app returns HTTP 500 (auth can't initialize) — this is the only thing between "deployed" and "working".
+- [ ] **Link + push the Shopify app** — `npm run shopify:config:link`; `npm run shopify:deploy` (uploads the theme extension + app config + all webhook subscriptions). Needs interactive Partner auth.
 - [ ] **Configure pricing in the Partner Dashboard** — Free (3 locations) / Premium ($14.99/mo, 7-day trial; optional $149.90/yr).
 - [ ] **Exercise billing once on a dev store** — upgrade → confirm the plan activates via the webhook; downgrade → confirm the Shopify charge is cancelled (satisfies the 1.2.2 needs-review item). Dev stores use test charges automatically.
 - [ ] **Confirm GDPR webhook delivery** — after deploy, verify the three mandatory webhooks return 200 (they're HMAC-verified and registered).
