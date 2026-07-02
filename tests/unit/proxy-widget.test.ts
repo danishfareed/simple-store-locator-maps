@@ -29,6 +29,11 @@ function signedProxyUrl(params: Record<string, string>, secret: string): string 
   return url.toString();
 }
 
+/** Parse the loader's JSON body with the minimal shape these tests assert on. */
+async function readWidgetBody(response: Response): Promise<{ widget: { type: string } }> {
+  return (await response.json()) as { widget: { type: string } };
+}
+
 function fakeContext() {
   return {
     cloudflare: {
@@ -78,7 +83,7 @@ describe("proxy.widget loader — render-time widget-type gate", () => {
     const response = await loader({ request: new Request(url), context: fakeContext(), params: {} } as any);
 
     expect(response.status).toBe(200);
-    const body = await response.json();
+    const body = await readWidgetBody(response);
     expect(body.widget.type).toBe("map_list");
   });
 
@@ -95,7 +100,7 @@ describe("proxy.widget loader — render-time widget-type gate", () => {
     const response = await loader({ request: new Request(url), context: fakeContext(), params: {} } as any);
 
     expect(response.status).toBe(200);
-    const body = await response.json();
+    const body = await readWidgetBody(response);
     expect(body.widget.type).toBe("finder");
   });
 
@@ -112,7 +117,7 @@ describe("proxy.widget loader — render-time widget-type gate", () => {
     const response = await loader({ request: new Request(url), context: fakeContext(), params: {} } as any);
 
     expect(response.status).toBe(200);
-    const body = await response.json();
+    const body = await readWidgetBody(response);
     expect(body.widget.type).toBe("map_list");
   });
 
@@ -129,7 +134,7 @@ describe("proxy.widget loader — render-time widget-type gate", () => {
     const response = await loader({ request: new Request(url), context: fakeContext(), params: {} } as any);
 
     expect(response.status).toBe(200);
-    const body = await response.json();
+    const body = await readWidgetBody(response);
     expect(body.widget.type).toBe("map_list");
   });
 });
