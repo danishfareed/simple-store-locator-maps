@@ -8,6 +8,8 @@
  *   `X-Shopify-Hmac-Sha256`.
  */
 
+const HEX_PATTERN = /^[0-9a-f]+$/i;
+
 export async function verifyAppProxy(
   request: Request,
   secret: string,
@@ -15,6 +17,9 @@ export async function verifyAppProxy(
   const url = new URL(request.url);
   const signature = url.searchParams.get("signature");
   if (!signature) return null;
+  // Reject malformed hex up front: a non-hex signature must never verify.
+  // (timingSafeEqualHex is hardened too, but this is the clearest gate.)
+  if (!HEX_PATTERN.test(signature)) return null;
   url.searchParams.delete("signature");
 
   const params = [...url.searchParams.entries()]
@@ -60,12 +65,25 @@ async function hmacSha256Raw(secret: string, message: string): Promise<ArrayBuff
   return crypto.subtle.sign("HMAC", key, enc.encode(message));
 }
 
-function timingSafeEqualHex(a: string, b: string): boolean {
+// Exported for direct unit testing of the constant-time hex compare — the
+// NaN-coercion edge case it guards against is otherwise very hard to
+// exercise deterministically through the public verifyAppProxy surface
+// (it only manifests when a REAL digest byte happens to be 0x00).
+export function timingSafeEqualHex(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i += 2) {
-    diff |=
-      parseInt(a.substr(i, 2), 16) ^ parseInt(b.substr(i, 2), 16);
+    const byteA = parseInt(a.substr(i, 2), 16);
+    const byteB = parseInt(b.substr(i, 2), 16);
+    // parseInt("1g", 16) parses the valid leading digits and ignores the
+    // rest, and a fully-invalid pair yields NaN — and NaN ^ 0 === 0, which
+    // would spuriously "match" a zero byte. Force a mismatch instead of
+    // trusting the coercion.
+    if (Number.isNaN(byteA) || Number.isNaN(byteB)) {
+      diff |= 1;
+      continue;
+    }
+    diff |= byteA ^ byteB;
   }
   return diff === 0;
 }
