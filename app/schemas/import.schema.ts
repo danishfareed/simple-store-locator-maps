@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+/**
+ * Map an empty string / whitespace-only / null cell to `undefined` so that an
+ * optional field is genuinely skipped rather than coerced. Used for numeric
+ * fields (defect #3) and applied centrally to optional string columns in the
+ * importer's `normaliseRow` (defect #4).
+ */
+export function blankToUndefined(v: unknown): unknown {
+  if (v == null) return undefined;
+  if (typeof v === "string" && v.trim() === "") return undefined;
+  return v;
+}
+
 // Canonical CSV/XLSX row shape. Column names are lowercase snake_case;
 // the importer normalises header casing and common aliases before validating.
 export const ImportRowSchema = z.object({
@@ -12,8 +24,17 @@ export const ImportRowSchema = z.object({
   region: z.string().optional(),
   postal_code: z.string().optional(),
   country_code: z.string().length(2).optional(),
-  latitude: z.coerce.number().min(-90).max(90).optional(),
-  longitude: z.coerce.number().min(-180).max(180).optional(),
+  // defect #3: an empty/blank cell must become `undefined` BEFORE coercion —
+  // `z.coerce.number()` turns "" into 0 (Number("") === 0), which would persist
+  // un-geocoded stores at (0,0) ("Null Island") and pollute radius search.
+  latitude: z.preprocess(
+    blankToUndefined,
+    z.coerce.number().min(-90).max(90).optional(),
+  ),
+  longitude: z.preprocess(
+    blankToUndefined,
+    z.coerce.number().min(-180).max(180).optional(),
+  ),
   phone: z.string().optional(),
   email: z.string().email().optional(),
   website: z.string().url().optional(),
