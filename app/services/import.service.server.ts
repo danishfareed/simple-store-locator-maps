@@ -22,7 +22,6 @@ import {
   assertImportQuota,
   getPlanForShop,
   PlanFeatureError,
-  QuotaExceededError,
 } from "./quota.service.server";
 import { planAllowsImportKind } from "../lib/billing/plans";
 import {
@@ -86,19 +85,12 @@ export async function enqueueImport(
 
   await assertImportQuota(db, shopId);
 
-  // Defect #1: cheap pre-check for fast UI feedback. If the shop is already at
-  // its location cap, there is no point queuing an import that can insert
-  // nothing — surface the upgrade prompt now. (The worker re-checks with
-  // net-new accounting; this is just an early exit for the full-cap case.)
-  const current = await countLocations(db, shopId);
-  if (current >= plan.maxLocations) {
-    throw new QuotaExceededError(
-      "locations",
-      plan.handle,
-      plan.maxLocations,
-      current,
-    );
-  }
+  // The per-plan location cap is enforced authoritatively in the worker
+  // (`runImport`) using net-new accounting, so update-only re-imports at full
+  // capacity are still accepted. We intentionally do NOT hard-block on the
+  // current count here — a blanket full-cap gate wrongly rejects imports that
+  // only update existing locations. Overflow net-new rows are reported as
+  // per-row errors by the worker.
 
   const importId = newId();
   const r2Key = `imports/${shopId}/${importId}/${sanitize(file.name)}`;
