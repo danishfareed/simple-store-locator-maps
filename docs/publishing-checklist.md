@@ -1,7 +1,7 @@
 # Simple Store Locator — App Store Publishing Checklist
 
 **App:** Simple Store Locator — Shopify embedded app (React Router 7 + Cloudflare Workers/D1/R2/Queues) with a theme app extension storefront widget.
-**Deploy target:** `https://locator.vdesignu.com`
+**Deploy target:** `https://storelocator.vdesignu.com`
 **Status:** Code complete, CI-clean, compliance- and security-reviewed. Remaining items below require your Cloudflare/Shopify accounts and a dev store.
 
 ---
@@ -60,7 +60,7 @@ A multi-dimension audit (auth/HMAC, storefront-XSS/exposure, billing/plan-enforc
 
 Follow the deploy runbook in [README.md](../README.md) for exact commands.
 
-- [x] **Deploy to Cloudflare** — DONE. D1/R2/Queues provisioned, migrations applied `--remote`, worker deployed, and bound to the custom domain **`https://locator.vdesignu.com`** (valid TLS). `SESSION_SECRET` set.
+- [x] **Deploy to Cloudflare** — DONE. D1/R2/Queues provisioned, migrations applied `--remote`, worker deployed, and bound to the custom domain **`https://storelocator.vdesignu.com`** (valid TLS). `SESSION_SECRET` set.
 - [ ] **Set the Shopify secrets** — `wrangler secret put SHOPIFY_API_KEY` and `wrangler secret put SHOPIFY_API_SECRET` (from your Partner Dashboard app). Until these are set the app returns HTTP 500 (auth can't initialize) — this is the only thing between "deployed" and "working".
 - [ ] **Link + push the Shopify app** — `npm run shopify:config:link`; `npm run shopify:deploy` (uploads the theme extension + app config + all webhook subscriptions). Needs interactive Partner auth.
 - [ ] **Configure pricing in the Partner Dashboard** — Free (3 locations) / Premium ($14.99/mo, 7-day trial; optional $149.90/yr).

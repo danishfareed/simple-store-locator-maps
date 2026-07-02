@@ -6,14 +6,17 @@ compatibility_flags = ["nodejs_compat"]
 
 assets = { directory = "./build/client", binding = "ASSETS" }
 
-# Buyer-facing custom domain (Cloudflare provisions the DNS record + TLS cert).
-routes = [
-  { pattern = "locator.vdesignu.com", custom_domain = true },
-]
+# Buyer-facing custom domain: storelocator.vdesignu.com is attached to this
+# Worker via the Cloudflare dashboard/API (Workers → Domains), NOT via a
+# `routes` entry here. The deploy token is account-scoped (Workers + D1/R2/
+# Queues) and lacks the zone-level Workers Routes permission that wrangler's
+# `custom_domain` reconciliation needs — managing the domain out-of-band keeps
+# `wrangler deploy` working. (To manage it via config instead, use a token with
+# "Zone → Workers Routes → Edit" and re-add the routes block.)
 
 [vars]
 # Public/non-secret vars only. Secrets → `wrangler secret put`.
-SHOPIFY_APP_URL = "https://locator.vdesignu.com"
+SHOPIFY_APP_URL = "https://storelocator.vdesignu.com"
 SCOPES = ""
 SHOPIFY_API_VERSION = "2026-04"
 # Live stores get real charges; Shopify dev stores force test charges regardless.

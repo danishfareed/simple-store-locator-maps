@@ -52,7 +52,7 @@ tests/                   Vitest
 
 This app deploys as a Cloudflare Worker (backend + admin UI) that Shopify's app framework talks to, plus a theme app extension pushed to Shopify. Existing production config already targets:
 
-- App URL: `https://locator.vdesignu.com` (set in [`shopify.app.toml`](shopify.app.toml) and [`wrangler.toml`](wrangler.toml))
+- App URL: `https://storelocator.vdesignu.com` (set in [`shopify.app.toml`](shopify.app.toml) and [`wrangler.toml`](wrangler.toml))
 - Cloudflare `account_id`: already set in [`wrangler.toml`](wrangler.toml)
 
 ### 1. Prerequisites
@@ -114,7 +114,7 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-This runs `npm run build` (React Router client/server build → `node scripts/build-worker.mjs` → `node scripts/build-extension.mjs`, emitting the Worker bundle, the storefront widget bundle, and the admin preview bundle) followed by `wrangler deploy`. Once it completes, the app is live at `https://locator.vdesignu.com`.
+This runs `npm run build` (React Router client/server build → `node scripts/build-worker.mjs` → `node scripts/build-extension.mjs`, emitting the Worker bundle, the storefront widget bundle, and the admin preview bundle) followed by `wrangler deploy`. Once it completes, the app is live at `https://storelocator.vdesignu.com`.
 
 ### 6. Link and push the Shopify app config + extension
 
