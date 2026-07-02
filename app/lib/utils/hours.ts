@@ -37,11 +37,17 @@ export function isOpenNow(
     return { open: false, label: "Closed" };
   }
 
-  // Currently within an interval?
+  // Currently within an interval? An interval whose close time is <= its
+  // open time (e.g. 22:00->02:00) wraps past midnight, so "within" means
+  // "at/after open OR before close" rather than a simple bounded range.
   for (const interval of openIntervals) {
     const openMin = toMinutes(interval.open);
     const closeMin = toMinutes(interval.close);
-    if (minutesOfDay >= openMin && minutesOfDay < closeMin) {
+    const isOvernight = closeMin <= openMin;
+    const openNow = isOvernight
+      ? minutesOfDay >= openMin || minutesOfDay < closeMin
+      : minutesOfDay >= openMin && minutesOfDay < closeMin;
+    if (openNow) {
       return {
         open: true,
         label: "Open now",

@@ -82,4 +82,51 @@ describe("isOpenNow", () => {
     expect(result.open).toBe(true);
     expect(result.label).toBe("Open now");
   });
+
+  describe("overnight (cross-midnight) intervals", () => {
+    // Wed 22:00–02:00, every other day closed.
+    const OVERNIGHT_HOURS: LocationHours = {
+      "1": [],
+      "2": [],
+      "3": [{ open: "22:00", close: "02:00" }],
+      "4": [],
+      "5": [],
+      "6": [],
+      "7": [],
+    };
+
+    it("is open late in the evening (Wed 23:30 America/New_York)", () => {
+      const now = new Date("2026-07-02T03:30:00Z"); // 23:30 EDT Wed
+      const result = isOpenNow(OVERNIGHT_HOURS, now, TZ);
+      expect(result.open).toBe(true);
+      expect(result.label).toBe("Open now");
+      expect(result.nextChange).toBe("02:00");
+    });
+
+    it("is open just after midnight, still keyed to the opening weekday (Wed 01:00 America/New_York)", () => {
+      // The interval is keyed on Wednesday (weekday "3"); 01:00 EDT Wed is
+      // still within the Wed 22:00->02:00 window even though clock time is
+      // "before" the open time.
+      const now = new Date("2026-07-01T05:00:00Z"); // 01:00 EDT Wed
+      const result = isOpenNow(OVERNIGHT_HOURS, now, TZ);
+      expect(result.open).toBe(true);
+      expect(result.label).toBe("Open now");
+      expect(result.nextChange).toBe("02:00");
+    });
+
+    it("is closed mid-afternoon (Wed 15:00 America/New_York)", () => {
+      const now = new Date("2026-07-01T19:00:00Z"); // 15:00 EDT Wed
+      const result = isOpenNow(OVERNIGHT_HOURS, now, TZ);
+      expect(result.open).toBe(false);
+      expect(result.label).toBe("Opens 22:00");
+    });
+
+    it("a normal (non-overnight) interval still behaves correctly", () => {
+      const now = new Date("2026-07-01T14:00:00Z"); // 10:00 EDT Wed
+      const result = isOpenNow(STANDARD_HOURS, now, TZ);
+      expect(result.open).toBe(true);
+      expect(result.label).toBe("Open now");
+      expect(result.nextChange).toBe("17:00");
+    });
+  });
 });
