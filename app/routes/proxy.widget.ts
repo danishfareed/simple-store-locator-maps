@@ -4,7 +4,11 @@ import { requireStorefront } from "../lib/auth/storefront.server";
 import { widgets } from "../lib/db/schema";
 import { resolveProvider } from "../services/provider.service.server";
 import { incrementStorefrontRequest } from "../services/quota.service.server";
-import { applyPlanToConfig, planShowsPoweredBy } from "../lib/billing/plans";
+import {
+  applyPlanToConfig,
+  planAllowsWidgetType,
+  planShowsPoweredBy,
+} from "../lib/billing/plans";
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const gate = await requireStorefront(request, context);
@@ -41,12 +45,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // `saveWidget` only normalizes at save time.
   const config = applyPlanToConfig(widget.config, gate.shop.planHandle);
 
+  // Same story for widget TYPE: `assertWidgetTypeAllowed` only gates at save
+  // time, so a widget saved as finder/carousel/list/single while on premium
+  // keeps rendering that premium type after a downgrade to free unless we
+  // re-check here too.
+  const type = planAllowsWidgetType(gate.shop.planHandle, widget.type)
+    ? widget.type
+    : "map_list";
+
   return Response.json(
     {
       widget: {
         handle: widget.handle,
         name: widget.name,
-        type: widget.type,
+        type,
         provider: provider.id,
         providerMeta: {
           tileUrl: provider.tileUrl,
