@@ -16,7 +16,6 @@ scopes = ""
 [auth]
 redirect_urls = [
   "https://storelocator.vdesignu.com/auth/callback",
-  "https://storelocator.vdesignu.com/auth/shopify/callback",
   "https://storelocator.vdesignu.com/api/auth/callback",
 ]
 
