@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 name = "simple store locator"
-handle = "simple-store-locator"
+handle = "storelocator-vdesignu"
 application_url = "https://storelocator.vdesignu.com"
 embedded = true
 client_id = "817cac4e2f1d3f929fb87ef43571d6e9"
@@ -23,6 +23,11 @@ redirect_urls = [
 [webhooks]
 api_version = "2026-04"
 
+  [webhooks.privacy_compliance]
+  customer_data_request_url = "/webhooks/customers/data_request"
+  customer_deletion_url = "/webhooks/customers/redact"
+  shop_deletion_url = "/webhooks/shop/redact"
+
   [[webhooks.subscriptions]]
   uri = "/webhooks/app/uninstalled"
   topics = [ "app/uninstalled" ]
@@ -30,18 +35,6 @@ api_version = "2026-04"
   [[webhooks.subscriptions]]
   uri = "/webhooks/app_subscriptions/update"
   topics = [ "app_subscriptions/update" ]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/customers/data_request"
-  topics = [ "customers/data_request" ]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/customers/redact"
-  topics = [ "customers/redact" ]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/shop/redact"
-  topics = [ "shop/redact" ]
 
 [app_proxy]
 url = "https://storelocator.vdesignu.com/proxy"
