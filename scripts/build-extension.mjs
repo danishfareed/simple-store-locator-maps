@@ -3,7 +3,10 @@
  * Bundle the storefront widget (theme app extension) with esbuild.
  *
  * The widget is framework-free vanilla JS living under
- * `extensions/store-locator-block/src/`. Its entry (`core.js`) also pulls in a
+ * `extensions-src/store-locator-block/src/` (kept OUTSIDE the theme extension
+ * folder, because Shopify only permits assets/blocks/locales/snippets inside a
+ * theme app extension — the built bundle is emitted into the extension's
+ * `assets/`). Its entry (`core.js`) also pulls in a
  * couple of pure, client-safe TypeScript utilities from `app/lib/utils/*`;
  * esbuild transpiles + tree-shakes those into a single IIFE that the Liquid
  * block loads as a classic `<script>`.
@@ -31,7 +34,7 @@ function kb(file) {
 // ── Storefront bundle (theme app extension asset) ──────────────────────────
 const storefrontEntry = resolve(
   root,
-  "extensions/store-locator-block/src/core.js",
+  "extensions-src/store-locator-block/src/core.js",
 );
 const storefrontOut = resolve(
   root,
@@ -59,7 +62,7 @@ console.log(
 // /store-locator-preview.js for the /widget-preview iframe.
 const previewEntry = resolve(
   root,
-  "extensions/store-locator-block/src/preview.js",
+  "extensions-src/store-locator-block/src/preview.js",
 );
 const previewJsOut = resolve(root, "build/client/store-locator-preview.js");
 const previewCssOut = resolve(root, "build/client/store-locator-preview.css");

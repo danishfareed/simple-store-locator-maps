@@ -1,4 +1,5 @@
 api_version = "2026-04"
+uid = "7f914e2e-755a-3438-d768-16ae41f362940dde7f83"
 
 [[extensions]]
 name = "Store Locator"

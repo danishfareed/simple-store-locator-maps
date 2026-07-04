@@ -88,7 +88,10 @@ export default [
   },
   {
     // Storefront widget bundle: framework-free browser JS (esbuild input).
-    files: ["extensions/store-locator-block/src/**/*.js"],
+    // Lives OUTSIDE the theme extension folder (Shopify forbids a `src/` dir
+    // inside theme app extensions); the built bundle lands in the extension's
+    // assets/.
+    files: ["extensions-src/store-locator-block/src/**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -120,6 +123,8 @@ export default [
       // Wrangler's local dev/build scratch space (bundled Worker code,
       // vendored deps) — not source we own or want linted.
       ".wrangler/**",
+      // Shopify CLI scratch (deploy bundles / minified extension output).
+      ".shopify/**",
       // Built output of scripts/build-extension.mjs (bundled/minified).
       "extensions/store-locator-block/assets/store-locator.js",
     ],
