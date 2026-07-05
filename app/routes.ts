@@ -1,8 +1,12 @@
-import { type RouteConfig, route, index, layout } from "@react-router/dev/routes";
+import { type RouteConfig, route, index } from "@react-router/dev/routes";
 
 export default [
+  // Shopify loads the app at the app URL root; send it to /app, preserving the
+  // embedded query params (shop, host, embedded, id_token, …).
+  index("routes/_index.tsx"),
+
   // Embedded admin shell under /app
-  layout("routes/app.tsx", [
+  route("app", "routes/app.tsx", [
     index("routes/app._index.tsx"),
     route("locations", "routes/app.locations.tsx"),
     route("locations/new", "routes/app.locations.new.tsx"),

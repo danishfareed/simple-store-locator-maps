@@ -8,6 +8,8 @@ import {
   type HeadersFunction,
 } from "react-router";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import { AppProvider as PolarisAppProvider } from "@shopify/polaris";
+import polarisTranslations from "@shopify/polaris/locales/en.json";
 import { NavMenu } from "@shopify/app-bridge-react";
 import { requireAdmin } from "../lib/auth/admin.server";
 
@@ -35,7 +37,8 @@ export default function App() {
 
   return (
     <AppProvider embedded apiKey={apiKey}>
-      <NavMenu>
+      <PolarisAppProvider i18n={polarisTranslations}>
+        <NavMenu>
         <Link to="/app" rel="home">
           Home
         </Link>
@@ -46,7 +49,8 @@ export default function App() {
         <Link to="/app/settings">Settings</Link>
         <Link to="/app/billing">Billing</Link>
       </NavMenu>
-      <Outlet />
+        <Outlet />
+      </PolarisAppProvider>
     </AppProvider>
   );
 }
